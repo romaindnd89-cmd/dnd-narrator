@@ -8,12 +8,60 @@ export enum NarrationStyle {
 export enum NarratorMode {
   COMBAT = 'Combat',
   LOOT = 'Fouille / Recherche',
+  INTERACTIVE = 'Objet Interactif / Énigme',
   DICE = 'Dés',
+  WORLD = 'Monde / Ambiance',
 }
 
 export enum LootType {
   USELESS = 'Objet Inutile (Ambiance / Bric-à-brac)',
   USEFUL = 'Objet Utile (Petit consommable / Outil)',
+}
+
+export enum InteractiveObjectType {
+  CHEST = 'Coffre / Malle',
+  DOOR = 'Porte / Portail',
+  BOOK = 'Livre / Grimoire',
+  STATUE = 'Statue / Idole',
+  ORB = 'Orbe / Sphère',
+  CUBE = 'Cube / Artefact',
+  ALALTAR = 'Autel / Stèle',
+  POUCH = 'Bourse / Sac',
+  MECHANISM = 'Levier / Mécanisme',
+  MIRROR = 'Miroir',
+  RANDOM = 'Aléatoire',
+}
+
+export enum InteractionAction {
+  TOUCH = 'Toucher (Effet Réactif / Piège)',
+  OPEN = 'Ouvrir / Fouiller (Contenant)',
+  RIDDLE = 'Énigme / Puzzle (Bloqué)',
+}
+
+export enum EnvironmentType {
+  DUNGEON = 'Donjon / Crypte',
+  CASTLE = 'Château / Fort',
+  MANOR = 'Manoir / Demeure',
+  FOREST = 'Forêt / Bois',
+  CAVE = 'Grotte / Caverne',
+  TAVERN = 'Taverne / Auberge',
+  CITY = 'Ville / Ruelle',
+  RUINS = 'Ruines Antiques',
+  PLAINS = 'Plaines / Champ de bataille',
+  MOUNTAIN = 'Montagne / Col',
+  SWAMP = 'Marais / Marécage',
+  TEMPLE = 'Temple / Sanctuaire',
+}
+
+export enum WorldAtmosphere {
+  DARK_FANTASY = 'Dark Fantasy (Standard)',
+  HAUNTED = 'Hanté / Lugubre / Spectral',
+  ABANDONED = 'Abandonné / Poussiéreux',
+  BLOODY = 'Sanglant / Massacre récent',
+  MAGICAL = 'Magique / Féérique / Mystique',
+  DARKNESS = 'Ténèbres Totales / Oppressant',
+  FOGGY = 'Brumeux / Mystérieux',
+  BURNING = 'En flammes / Cendres',
 }
 
 export enum WeaponType {
@@ -59,10 +107,100 @@ export interface CombatState {
   result: DiceResult;
   // Loot props
   lootType: LootType;
+  // World props
+  environmentType: EnvironmentType;
+  atmosphere: WorldAtmosphere;
+  // Interactive props
+  interactiveObj: InteractiveObjectType;
+  interactionAction: InteractionAction;
   // Shared props
-  target: string; // Enemy name OR Loot location (Chest, Body...)
+  target: string; // Enemy name OR Loot location OR Specific Place Name
 }
 
 export interface NarrationResponse {
   text: string;
+}
+
+// Character Profile Interfaces
+export interface AbilityStats {
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+}
+
+export interface AbilityModifiers {
+  str: string;
+  dex: string;
+  con: string;
+  int: string;
+  wis: string;
+  cha: string;
+}
+
+export interface Skill {
+  name: string;
+  mod: string;
+  proficient: boolean;
+  stat: string;
+}
+
+export interface SavingThrow {
+  name: string;
+  mod: string;
+  proficient: boolean;
+}
+
+export interface Attack {
+  name: string;
+  bonus: string;
+  damage: string;
+}
+
+export interface Feature {
+  name: string;
+  description: string;
+}
+
+export interface CharacterProfile {
+  name: string;
+  class: string;
+  subclass: string;
+  level: number;
+  background: string;
+  playerName: string;
+  race: string;
+  alignment: string;
+  xp: number;
+  stats: AbilityStats;
+  modifiers: AbilityModifiers;
+  proficiencyBonus: string;
+  savingThrows: SavingThrow[];
+  skills: Skill[];
+  passivePerception: number;
+  ac: number;
+  initiative: string;
+  speed: string;
+  hpMax: number;
+  hpCurrent: number;
+  hitDice: string;
+  attacks: Attack[];
+  treasure: string;
+  equipment: string[];
+  personalityTraits: string;
+  ideals: string;
+  bonds: string;
+  flaws: string;
+  featuresAndTraits: Feature[];
+  otherProficiencies: string[];
+  visualPrompt: string;
+  age: string;
+  height: string;
+  weight: string;
+  eyes: string;
+  skin: string;
+  hair: string;
+  backstory: string;
 }

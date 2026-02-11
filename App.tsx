@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import NarratorForm from './components/NarratorForm';
 import StoryBox from './components/StoryBox';
 import ApiKeyGate from './components/ApiKeyGate';
-import { CombatState, DiceResult, WeaponType, BodyPart, NarrationStyle, NarratorMode, LootType } from './types';
+import { CombatState, DiceResult, WeaponType, BodyPart, NarrationStyle, NarratorMode, LootType, EnvironmentType, WorldAtmosphere, InteractiveObjectType, InteractionAction } from './types';
 import { generateNarration } from './services/geminiService';
 import { playCombatSound, playDiceSound } from './services/soundService';
 import { Flame, AlertTriangle, LogOut, Instagram } from 'lucide-react';
@@ -33,6 +33,10 @@ const App: React.FC = () => {
     bodyPart: BodyPart.UNSPECIFIED,
     result: DiceResult.HIT,
     lootType: LootType.USEFUL,
+    environmentType: EnvironmentType.FOREST,
+    atmosphere: WorldAtmosphere.DARK_FANTASY,
+    interactiveObj: InteractiveObjectType.CHEST,
+    interactionAction: InteractionAction.OPEN,
     target: '',
   });
 
@@ -60,8 +64,8 @@ const App: React.FC = () => {
     }
 
     try {
-      const resultText = await generateNarration(combatState, apiKey);
-      setNarration(resultText);
+      const resultData = await generateNarration(combatState, apiKey);
+      setNarration(resultData);
     } catch (err: any) {
       console.error(err);
       const msg = err.message?.toLowerCase() || "";
@@ -127,7 +131,7 @@ const App: React.FC = () => {
           />
         </div>
         <div className="flex flex-col">
-          <StoryBox narration={narration} error={error} />
+          <StoryBox narration={narration} error={error} apiKey={apiKey} />
         </div>
       </main>
 

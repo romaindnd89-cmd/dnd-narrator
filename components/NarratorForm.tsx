@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType } from '../types';
-import { Sword, Skull, Target, Sparkles, User, BookOpen, Search, Gem, Archive, Dices, ZapOff } from 'lucide-react';
+import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType, EnvironmentType, WorldAtmosphere, InteractiveObjectType, InteractionAction } from '../types';
+import { Sword, Skull, Target, Sparkles, Map, BookOpen, Search, Gem, Archive, Dices, ZapOff, Globe, User, Box, HandMetal } from 'lucide-react';
 
 interface NarratorFormProps {
   combatState: CombatState;
@@ -47,6 +47,22 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
     onChange({ ...combatState, lootType: e.target.value as LootType });
   };
 
+  const handleEnvironmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ ...combatState, environmentType: e.target.value as EnvironmentType });
+  };
+
+  const handleAtmosphereChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ ...combatState, atmosphere: e.target.value as WorldAtmosphere });
+  };
+
+  const handleInteractiveObjChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ ...combatState, interactiveObj: e.target.value as InteractiveObjectType });
+  };
+
+  const handleInteractionActionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ ...combatState, interactionAction: e.target.value as InteractionAction });
+  };
+
   const currentMode = combatState.mode;
 
   const diceTypes = [
@@ -71,15 +87,31 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
       <div className="flex border-b border-gold-dark/30 overflow-x-auto no-scrollbar">
         <button
             onClick={() => handleModeChange(NarratorMode.COMBAT)}
-            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
                 ${currentMode === NarratorMode.COMBAT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
             `}
         >
             <Sword className="w-4 h-4 md:w-5 md:h-5" /> Combat
         </button>
         <button
+            onClick={() => handleModeChange(NarratorMode.WORLD)}
+            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
+                ${currentMode === NarratorMode.WORLD ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
+            `}
+        >
+            <Globe className="w-4 h-4 md:w-5 md:h-5" /> Monde
+        </button>
+        <button
+            onClick={() => handleModeChange(NarratorMode.INTERACTIVE)}
+            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
+                ${currentMode === NarratorMode.INTERACTIVE ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
+            `}
+        >
+            <Box className="w-4 h-4 md:w-5 md:h-5" /> Objet
+        </button>
+        <button
             onClick={() => handleModeChange(NarratorMode.LOOT)}
-            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
                 ${currentMode === NarratorMode.LOOT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
             `}
         >
@@ -87,7 +119,7 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
         </button>
         <button
             onClick={() => handleModeChange(NarratorMode.DICE)}
-            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
                 ${currentMode === NarratorMode.DICE ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
             `}
         >
@@ -101,7 +133,7 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
             <div className="space-y-2">
                 <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
                     <BookOpen className="w-5 h-5 text-blood-red" />
-                    Style de Narration
+                    Détail de la description
                 </label>
                 <div className="relative">
                     <select
@@ -188,6 +220,53 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
             </>
         )}
 
+        {/* === INTERACTIVE OBJECTS INPUTS === */}
+        {currentMode === NarratorMode.INTERACTIVE && (
+            <>
+                <div className="space-y-2 animate-fade-in">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                        <Box className="w-5 h-5 text-blood-red" />
+                        Type d'Objet
+                    </label>
+                    <div className="relative">
+                        <select
+                        value={combatState.interactiveObj}
+                        onChange={handleInteractiveObjChange}
+                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                        >
+                        {Object.values(InteractiveObjectType).map((obj) => (
+                            <option key={obj} value={obj}>{obj}</option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                        ▼
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-2 animate-fade-in">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                        <HandMetal className="w-5 h-5 text-blood-red" />
+                        Type d'Action / Interaction
+                    </label>
+                    <div className="relative">
+                        <select
+                        value={combatState.interactionAction}
+                        onChange={handleInteractionActionChange}
+                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                        >
+                        {Object.values(InteractionAction).map((action) => (
+                            <option key={action} value={action}>{action}</option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                        ▼
+                        </div>
+                    </div>
+                </div>
+            </>
+        )}
+
         {/* === LOOT INPUTS === */}
         {currentMode === NarratorMode.LOOT && (
             <div className="space-y-2 animate-fade-in">
@@ -210,6 +289,53 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                     </div>
                 </div>
             </div>
+        )}
+
+        {/* === WORLD INPUTS === */}
+        {currentMode === NarratorMode.WORLD && (
+            <>
+                <div className="space-y-2 animate-fade-in">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                        <Map className="w-5 h-5 text-blood-red" />
+                        Type d'Environnement
+                    </label>
+                    <div className="relative">
+                        <select
+                        value={combatState.environmentType}
+                        onChange={handleEnvironmentChange}
+                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                        >
+                        {Object.values(EnvironmentType).map((env) => (
+                            <option key={env} value={env}>{env}</option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                        ▼
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-2 animate-fade-in">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                        <Globe className="w-5 h-5 text-blood-red" />
+                        Ambiance / Style
+                    </label>
+                    <div className="relative">
+                        <select
+                        value={combatState.atmosphere}
+                        onChange={handleAtmosphereChange}
+                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                        >
+                        {Object.values(WorldAtmosphere).map((atm) => (
+                            <option key={atm} value={atm}>{atm}</option>
+                        ))}
+                        </select>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                        ▼
+                        </div>
+                    </div>
+                </div>
+            </>
         )}
 
         {/* === DICE INPUTS === */}
@@ -251,24 +377,37 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
             </div>
         )}
 
-        {/* Target Input (Shared but different placeholder) */}
+        {/* Target/Name Input (Shared but different placeholder) */}
         {currentMode !== NarratorMode.DICE && (
             <div className="space-y-2 animate-fade-in">
             <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                {currentMode === NarratorMode.COMBAT ? <Target className="w-5 h-5 text-blood-red" /> : <Archive className="w-5 h-5 text-blood-red" />}
-                {currentMode === NarratorMode.COMBAT ? 'Cible / Monstre' : 'Lieu de fouille'} <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
+                {currentMode === NarratorMode.COMBAT ? <Target className="w-5 h-5 text-blood-red" /> : 
+                 currentMode === NarratorMode.WORLD ? <Map className="w-5 h-5 text-blood-red" /> : 
+                 currentMode === NarratorMode.INTERACTIVE ? <Box className="w-5 h-5 text-blood-red" /> :
+                 <Archive className="w-5 h-5 text-blood-red" />}
+                
+                {currentMode === NarratorMode.COMBAT ? 'Cible / Monstre' : 
+                 currentMode === NarratorMode.WORLD ? 'Nom du Lieu' : 
+                 currentMode === NarratorMode.INTERACTIVE ? "Objet Spécifique" :
+                 'Lieu de fouille'} 
+                 <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
             </label>
             <input
                 type="text"
                 value={combatState.target}
                 onChange={handleTargetChange}
-                placeholder={currentMode === NarratorMode.COMBAT ? "Ex: Gobelin, Dragon Rouge..." : "Ex: Cadavre de bandit, Coffre pourri..."}
+                placeholder={
+                    currentMode === NarratorMode.COMBAT ? "Ex: Gobelin, Dragon Rouge..." : 
+                    currentMode === NarratorMode.WORLD ? "Ex: Le Bastion des Ombres..." : 
+                    currentMode === NarratorMode.INTERACTIVE ? "Ex: Coffre maudit, Levier rouillé..." :
+                    "Ex: Cadavre de bandit, Coffre pourri..."
+                }
                 className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none placeholder-gray-600"
             />
             </div>
         )}
 
-        {/* Submit Button (Only for Combat/Loot) */}
+        {/* Submit Button (Only for Combat/Loot/World/Interactive) */}
         {currentMode !== NarratorMode.DICE && (
             <div>
                 <button
@@ -292,7 +431,11 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                             </>
                         ) : (
                             <>
-                                <Sparkles className="w-5 h-5" /> {currentMode === NarratorMode.COMBAT ? 'Générer la Narration' : 'Générer l\'Objet'}
+                                <Sparkles className="w-5 h-5" /> 
+                                {currentMode === NarratorMode.COMBAT ? 'Générer la Narration' : 
+                                 currentMode === NarratorMode.WORLD ? 'Décrire le Monde' : 
+                                 currentMode === NarratorMode.INTERACTIVE ? 'Interagir avec l\'Objet' :
+                                 'Générer l\'Objet'}
                             </>
                         )}
                     </span>
