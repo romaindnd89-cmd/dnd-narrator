@@ -45,12 +45,6 @@ const App: React.FC = () => {
     playDiceSound();
     const roll = Math.floor(Math.random() * sides) + 1;
     
-    let effectLabel = "Jet de dé pur";
-    if (sides === 20) {
-        if (roll === 20) effectLabel = "REUSSITE CRITIQUE !";
-        if (roll === 1) effectLabel = "ECHEC CRITIQUE !";
-    }
-
     const diceOutput = `**Nom** : Lancer de d${sides}\n**Description** : Vous lancez un polyèdre à ${sides} faces. Il rebondit sur la table avant de s'immobiliser.\n**Effet** : Résultat du jet : ${roll}`;
     setNarration(diceOutput);
   };
@@ -72,11 +66,11 @@ const App: React.FC = () => {
       console.error(err);
       const msg = err.message?.toLowerCase() || "";
       if (msg.includes('429') || msg.includes('quota')) {
-        setError("Limite atteinte (15/min). Attends 30 secondes.");
+        setError("Limite Google atteinte. Attends 60 secondes ou vérifie ton quota journalier sur AI Studio.");
       } else if (msg.includes('403') || msg.includes('key not valid')) {
-        setError("Clé API invalide ou non activée. Vérifie sur AI Studio.");
+        setError("Clé API invalide. Assure-toi d'avoir activé le modèle Gemini 1.5/2.0/3.0 sur ton projet.");
       } else {
-        setError("Les esprits du chaos sont perturbés... Réessaie.");
+        setError("Une perturbation dans le Warp empêche la narration... Réessaie.");
       }
     } finally {
       setIsLoading(false);

@@ -7,57 +7,57 @@ export const generateNarration = async (combatState: CombatState, apiKey: string
     return "**Nom** : Fiole de Sang Séché\n**Description** : Une petite fiole scellée par de la cire noire.\n**Effet** : Réactif d'alchimie. Donne +1 aux jets de Nécromancie.";
   }
 
-  // Utilisation de Gemini 3 Pro pour plus de fiabilité sur les formats complexes
+  // Utilisation de Gemini 3 Flash : beaucoup plus de quota (15 RPM) et plus rapide
   const ai = new GoogleGenAI({ apiKey });
 
   try {
     const { weapon, bodyPart, result, target, style, mode, lootType } = combatState;
     
     let lengthInstruction = "";
-    if (style === NarrationStyle.SIMPLE) lengthInstruction = "Sois très bref (1 phrase).";
-    if (style === NarrationStyle.MEDIUM) lengthInstruction = "Fais un paragraphe court.";
-    if (style === NarrationStyle.IMMERSIVE) lengthInstruction = "Sois très descriptif et immersif.";
+    if (style === NarrationStyle.SIMPLE) lengthInstruction = "Réponse ultra-courte (10-15 mots).";
+    if (style === NarrationStyle.MEDIUM) lengthInstruction = "Un paragraphe de 2-3 phrases.";
+    if (style === NarrationStyle.IMMERSIVE) lengthInstruction = "Narration riche, gore et atmosphérique.";
 
-    const systemInstruction = "Tu es un Maître du Donjon expert en Dark Fantasy. Ton style est viscéral, sombre et élégant. Tu ne sors JAMAIS du personnage. Tu ne donnes aucune introduction (pas de 'Voici...', pas de 'Tu trouves...').";
+    const systemInstruction = "Tu es un Maître du Donjon de Dark Fantasy. Ton style est gothique, sanglant et poétique. Tu écris en français. Ne sors JAMAIS du personnage. Pas de politesse, pas d'introduction.";
     
     let prompt = "";
     if (mode === NarratorMode.LOOT) {
-        const location = target.trim() ? target : "cet endroit lugubre";
+        const location = target.trim() ? target : "cet endroit maudit";
         if (lootType === LootType.USEFUL) {
-            prompt = `Le joueur fouille ${location} et trouve un OBJET UTILE (consommable ou petit outil). 
+            prompt = `Le joueur fouille ${location} et trouve un OBJET UTILE. 
             ${lengthInstruction}
-            RÉPONDS EXCLUSIVEMENT AVEC CE FORMAT (SANS RIEN D'AUTRE) :
-            **Nom** : [Nom de l'objet]
-            **Description** : [L'apparence de l'objet]
-            **Effet** : [L'utilité concrète]`;
+            REPECTE CE FORMAT STRICT :
+            **Nom** : [Nom]
+            **Description** : [Apparence]
+            **Effet** : [Mécanique]`;
         } else {
-            prompt = `Le joueur fouille ${location}. Décris un objet sans valeur, étrange ou macabre. 
+            prompt = `Le joueur fouille ${location}. Décris un objet sans valeur mais macabre. 
             ${lengthInstruction}
             Format : **Nom** : [Nom] puis la description.`;
         }
     } else {
-        const targetDesc = target.trim() ? target : "l'ennemi";
+        const targetDesc = target.trim() ? target : "l'adversaire";
         const bodyPartDesc = (bodyPart && bodyPart !== BodyPart.UNSPECIFIED) ? bodyPart : "le corps";
-        prompt = `Action : ${weapon} sur ${targetDesc} (${bodyPartDesc}). Résultat du dé : ${result}. 
+        prompt = `Action : ${weapon} sur ${targetDesc} (${bodyPartDesc}). Résultat : ${result}. 
         ${lengthInstruction}
-        Raconte la scène de façon sombre.`;
+        Raconte la violence de l'instant.`;
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Passage au modèle Pro pour éviter les troncatures
+      model: 'gemini-3-flash-preview', // Flash est plus stable pour les quotas gratuits
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.8,
-        maxOutputTokens: 500,
-        // On ajoute un petit budget de réflexion pour assurer la qualité du format
-        thinkingConfig: { thinkingBudget: 100 }
+        temperature: 0.9,
+        maxOutputTokens: 400,
+        // On réduit le thinkingBudget pour Flash afin d'économiser du temps de réponse
+        thinkingConfig: { thinkingBudget: 0 } 
       }
     });
 
     const text = response.text;
     if (!text || text.trim().length < 3) {
-        throw new Error("L'esprit de la narration s'est évaporé... Réessaie.");
+        throw new Error("L'oracle reste silencieux... Réessaie.");
     }
     return text;
   } catch (error: any) {
