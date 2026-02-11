@@ -8,6 +8,7 @@ export enum NarrationStyle {
 export enum NarratorMode {
   COMBAT = 'Combat',
   LOOT = 'Fouille / Recherche',
+  DICE = 'Dés',
 }
 
 export enum LootType {

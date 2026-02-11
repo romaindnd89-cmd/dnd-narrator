@@ -5,7 +5,7 @@ import StoryBox from './components/StoryBox';
 import ApiKeyGate from './components/ApiKeyGate';
 import { CombatState, DiceResult, WeaponType, BodyPart, NarrationStyle, NarratorMode, LootType } from './types';
 import { generateNarration } from './services/geminiService';
-import { playCombatSound } from './services/soundService';
+import { playCombatSound, playDiceSound } from './services/soundService';
 import { Flame, AlertTriangle, LogOut, Instagram } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -40,6 +40,21 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleDiceRoll = (sides: number) => {
+    setError(null);
+    playDiceSound();
+    const roll = Math.floor(Math.random() * sides) + 1;
+    
+    let effectLabel = "Jet de dé pur";
+    if (sides === 20) {
+        if (roll === 20) effectLabel = "REUSSITE CRITIQUE !";
+        if (roll === 1) effectLabel = "ECHEC CRITIQUE !";
+    }
+
+    const diceOutput = `**Nom** : Lancer de d${sides}\n**Description** : Vous lancez un polyèdre à ${sides} faces. Il rebondit sur la table avant de s'immobiliser.\n**Effet** : Résultat du jet : ${roll}`;
+    setNarration(diceOutput);
+  };
+
   const handleSubmit = async () => {
     if (!apiKey) return;
     setIsLoading(true);
@@ -56,13 +71,10 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       const msg = err.message?.toLowerCase() || "";
-      
       if (msg.includes('429') || msg.includes('quota')) {
         setError("Limite atteinte (15/min). Attends 30 secondes.");
       } else if (msg.includes('403') || msg.includes('key not valid')) {
         setError("Clé API invalide ou non activée. Vérifie sur AI Studio.");
-      } else if (msg.includes('model not found')) {
-        setError("Modèle indisponible dans ta région ou clé restreinte.");
       } else {
         setError("Les esprits du chaos sont perturbés... Réessaie.");
       }
@@ -105,29 +117,28 @@ const App: React.FC = () => {
         <button 
           onClick={handleLogout} 
           className="absolute right-0 top-0 hidden lg:flex items-center gap-2 text-xs text-gray-600 hover:text-red-500 px-3 py-1.5 border border-gray-800 rounded-md transition-all hover:border-red-900/50 bg-black/40"
-          title="Déconnexion"
         >
-            <LogOut className="w-3 h-3" /> Quitter le donjon
+            <LogOut className="w-3 h-3" /> Quitter
         </button>
       </header>
 
       <main className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 items-stretch">
-        <div className="flex flex-col h-full">
-          <NarratorForm combatState={combatState} onChange={setCombatState} onSubmit={handleSubmit} isLoading={isLoading} />
+        <div className="flex flex-col">
+          <NarratorForm 
+            combatState={combatState} 
+            onChange={setCombatState} 
+            onSubmit={handleSubmit} 
+            onDiceRoll={handleDiceRoll}
+            isLoading={isLoading} 
+          />
         </div>
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col">
           <StoryBox narration={narration} error={error} />
         </div>
       </main>
 
       <footer className="mt-auto text-center text-gray-600 text-sm font-body pb-10 border-t border-gold-dark/10 pt-10 w-full max-w-4xl">
-        <div className="flex justify-center items-center gap-6 mb-4">
-           <div className="h-px w-12 bg-gradient-to-r from-transparent to-gold-dark/30"></div>
-           <Flame className="w-4 h-4 text-gold-dark/40" />
-           <div className="h-px w-12 bg-gradient-to-l from-transparent to-gold-dark/30"></div>
-        </div>
         <p className="tracking-wide">© {new Date().getFullYear()} <span className="text-gold-dark">Romain.DnD89</span> — Maître du Donjon Virtuel</p>
-        <p className="text-[10px] mt-2 opacity-40 uppercase tracking-widest">Invoqué par l'Intelligence Artificielle & la Passion du JDR</p>
       </footer>
     </div>
   );

@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType } from '../types';
-import { Sword, Skull, Target, Sparkles, User, BookOpen, Search, Gem, Archive } from 'lucide-react';
+import { Sword, Skull, Target, Sparkles, User, BookOpen, Search, Gem, Archive, Dices } from 'lucide-react';
 
 interface NarratorFormProps {
   combatState: CombatState;
   onChange: (newState: CombatState) => void;
   onSubmit: () => void;
+  onDiceRoll: (sides: number) => void;
   isLoading: boolean;
 }
 
@@ -13,6 +15,7 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
   combatState, 
   onChange, 
   onSubmit, 
+  onDiceRoll,
   isLoading,
 }) => {
   
@@ -44,10 +47,20 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
     onChange({ ...combatState, lootType: e.target.value as LootType });
   };
 
-  const isCombat = combatState.mode === NarratorMode.COMBAT;
+  const currentMode = combatState.mode;
+
+  const diceTypes = [
+    { label: 'd4', sides: 4, color: 'from-blue-900 to-blue-700' },
+    { label: 'd6', sides: 6, color: 'from-green-900 to-green-700' },
+    { label: 'd8', sides: 8, color: 'from-purple-900 to-purple-700' },
+    { label: 'd10', sides: 10, color: 'from-orange-900 to-orange-700' },
+    { label: 'd12', sides: 12, color: 'from-pink-900 to-pink-700' },
+    { label: 'd20', sides: 20, color: 'from-blood-dark to-blood-red' },
+    { label: 'd100', sides: 100, color: 'from-gray-800 to-gray-600' },
+  ];
 
   return (
-    <div className="bg-darker-metal border-2 border-gold-dark/30 rounded-lg shadow-2xl relative overflow-hidden group">
+    <div className="bg-darker-metal border-2 border-gold-dark/30 rounded-lg shadow-2xl relative overflow-hidden group h-full">
         {/* Decorative corner accents */}
         <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-antique pointer-events-none z-20"></div>
         <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-gold-antique pointer-events-none z-20"></div>
@@ -55,53 +68,61 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-antique pointer-events-none z-20"></div>
 
       {/* Tabs for Mode Selection */}
-      <div className="flex border-b border-gold-dark/30">
+      <div className="flex border-b border-gold-dark/30 overflow-x-auto no-scrollbar">
         <button
             onClick={() => handleModeChange(NarratorMode.COMBAT)}
-            className={`flex-1 py-4 text-center font-header text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
-                ${isCombat ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
+            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+                ${currentMode === NarratorMode.COMBAT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
             `}
         >
-            <Sword className="w-5 h-5" /> Combat
+            <Sword className="w-4 h-4 md:w-5 md:h-5" /> Combat
         </button>
         <button
             onClick={() => handleModeChange(NarratorMode.LOOT)}
-            className={`flex-1 py-4 text-center font-header text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
-                ${!isCombat ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
+            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+                ${currentMode === NarratorMode.LOOT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
             `}
         >
-            <Search className="w-5 h-5" /> Fouille
+            <Search className="w-4 h-4 md:w-5 md:h-5" /> Fouille
+        </button>
+        <button
+            onClick={() => handleModeChange(NarratorMode.DICE)}
+            className={`flex-1 min-w-[100px] py-4 text-center font-header text-sm md:text-lg uppercase tracking-wider transition-colors flex items-center justify-center gap-2
+                ${currentMode === NarratorMode.DICE ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
+            `}
+        >
+            <Dices className="w-4 h-4 md:w-5 md:h-5" /> Dés
         </button>
       </div>
 
-      <div className="p-6 md:p-8 space-y-6 relative z-10">
+      <div className="p-6 md:p-8 space-y-6 relative z-10 overflow-y-auto max-h-[calc(100vh-350px)] lg:max-h-none custom-scrollbar">
 
-        {/* Style Selection (Always Visible) */}
-        <div className="space-y-2">
-            <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                <BookOpen className="w-5 h-5 text-blood-red" />
-                Style de Narration
-            </label>
-            <div className="relative">
-                <select
-                value={combatState.style}
-                onChange={handleStyleChange}
-                className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                >
-                {Object.values(NarrationStyle).map((style) => (
-                    <option key={style} value={style}>{style}</option>
-                ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                ▼
+        {currentMode !== NarratorMode.DICE && (
+            <div className="space-y-2">
+                <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                    <BookOpen className="w-5 h-5 text-blood-red" />
+                    Style de Narration
+                </label>
+                <div className="relative">
+                    <select
+                    value={combatState.style}
+                    onChange={handleStyleChange}
+                    className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                    >
+                    {Object.values(NarrationStyle).map((style) => (
+                        <option key={style} value={style}>{style}</option>
+                    ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                    ▼
+                    </div>
                 </div>
             </div>
-        </div>
+        )}
         
         {/* === COMBAT INPUTS === */}
-        {isCombat && (
+        {currentMode === NarratorMode.COMBAT && (
             <>
-                {/* Weapon Selection */}
                 <div className="space-y-2 animate-fade-in">
                     <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
                         <Sword className="w-5 h-5 text-blood-red" />
@@ -123,7 +144,6 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                     </div>
                 </div>
 
-                {/* Body Part Selection (Optional) */}
                 <div className="space-y-2 animate-fade-in">
                     <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
                         <User className="w-5 h-5 text-blood-red" />
@@ -145,7 +165,6 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                     </div>
                 </div>
 
-                {/* Dice Result Selection */}
                 <div className="space-y-2 animate-fade-in">
                     <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
                         <Skull className="w-5 h-5 text-blood-red" />
@@ -170,7 +189,7 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
         )}
 
         {/* === LOOT INPUTS === */}
-        {!isCombat && (
+        {currentMode === NarratorMode.LOOT && (
             <div className="space-y-2 animate-fade-in">
                 <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
                     <Gem className="w-5 h-5 text-blood-red" />
@@ -190,63 +209,88 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                     ▼
                     </div>
                 </div>
-                <p className="text-xs text-gray-500 italic mt-1 ml-1">
-                   {combatState.lootType === LootType.USEFUL 
-                    ? "Génère un petit consommable avec des effets mécaniques équilibrés." 
-                    : "Génère un objet d'ambiance, étrange ou intriguant, sans valeur réelle."}
-                </p>
+            </div>
+        )}
+
+        {/* === DICE INPUTS === */}
+        {currentMode === NarratorMode.DICE && (
+            <div className="space-y-6 animate-fade-in">
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {diceTypes.map((dice) => (
+                        <button
+                            key={dice.sides}
+                            onClick={() => onDiceRoll(dice.sides)}
+                            className={`
+                                group/dice relative py-6 rounded-lg border border-gold-dark/20 
+                                bg-gradient-to-br ${dice.color} shadow-lg overflow-hidden
+                                transition-all hover:scale-105 active:scale-95
+                            `}
+                        >
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/dice:opacity-100 transition-opacity"></div>
+                            <span className="relative z-10 font-header text-2xl text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+                                {dice.label}
+                            </span>
+                            <div className="absolute bottom-1 right-2 opacity-20 group-hover/dice:opacity-40 transition-opacity">
+                                <Dices className="w-8 h-8 text-white" />
+                            </div>
+                        </button>
+                    ))}
+                 </div>
+                 <div className="p-4 bg-black/40 border border-gold-dark/10 rounded italic text-sm text-gray-500 font-body text-center">
+                    Cliquez sur un dé pour le lancer. Le résultat s'affichera sur le parchemin.
+                 </div>
             </div>
         )}
 
         {/* Target Input (Shared but different placeholder) */}
-        <div className="space-y-2 animate-fade-in">
-          <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-            {isCombat ? <Target className="w-5 h-5 text-blood-red" /> : <Archive className="w-5 h-5 text-blood-red" />}
-            {isCombat ? 'Cible / Monstre' : 'Lieu de fouille'} <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
-          </label>
-          <input
-            type="text"
-            value={combatState.target}
-            onChange={handleTargetChange}
-            placeholder={isCombat ? "Ex: Gobelin, Dragon Rouge..." : "Ex: Cadavre de bandit, Coffre pourri, Étagère..."}
-            className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none placeholder-gray-600"
-          />
-        </div>
+        {currentMode !== NarratorMode.DICE && (
+            <div className="space-y-2 animate-fade-in">
+            <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                {currentMode === NarratorMode.COMBAT ? <Target className="w-5 h-5 text-blood-red" /> : <Archive className="w-5 h-5 text-blood-red" />}
+                {currentMode === NarratorMode.COMBAT ? 'Cible / Monstre' : 'Lieu de fouille'} <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
+            </label>
+            <input
+                type="text"
+                value={combatState.target}
+                onChange={handleTargetChange}
+                placeholder={currentMode === NarratorMode.COMBAT ? "Ex: Gobelin, Dragon Rouge..." : "Ex: Cadavre de bandit, Coffre pourri..."}
+                className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none placeholder-gray-600"
+            />
+            </div>
+        )}
 
-        {/* Submit Button & Quota Info */}
-        <div>
-            <button
-            onClick={onSubmit}
-            disabled={isLoading}
-            className={`
-                w-full relative overflow-hidden group/btn
-                mt-4 py-4 px-6 rounded border border-gold-dark
-                font-header text-xl uppercase tracking-widest font-bold
-                transition-all duration-300
-                ${isLoading 
-                ? 'bg-gray-900 cursor-not-allowed text-gray-500 border-gray-700' 
-                : 'bg-blood-dark hover:bg-blood-red text-gold-antique shadow-glow-red hover:shadow-glow-gold hover:-translate-y-0.5'
-                }
-            `}
-            >
-                <span className="relative z-10 flex items-center justify-center gap-3">
-                    {isLoading ? (
-                        <>
-                            <span className="animate-spin text-2xl">⟳</span> Invocation...
-                        </>
-                    ) : (
-                        <>
-                            <Sparkles className="w-5 h-5" /> {isCombat ? 'Générer la Narration' : 'Générer l\'Objet'}
-                        </>
-                    )}
-                </span>
-                {!isLoading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>}
-            </button>
-            
-            <p className="text-xs text-center text-gray-600 mt-2 font-body italic opacity-70">
-                Limite : ~15 requêtes / minute
-            </p>
-        </div>
+        {/* Submit Button (Only for Combat/Loot) */}
+        {currentMode !== NarratorMode.DICE && (
+            <div>
+                <button
+                onClick={onSubmit}
+                disabled={isLoading}
+                className={`
+                    w-full relative overflow-hidden group/btn
+                    mt-4 py-4 px-6 rounded border border-gold-dark
+                    font-header text-xl uppercase tracking-widest font-bold
+                    transition-all duration-300
+                    ${isLoading 
+                    ? 'bg-gray-900 cursor-not-allowed text-gray-500 border-gray-700' 
+                    : 'bg-blood-dark hover:bg-blood-red text-gold-antique shadow-glow-red hover:shadow-glow-gold hover:-translate-y-0.5'
+                    }
+                `}
+                >
+                    <span className="relative z-10 flex items-center justify-center gap-3">
+                        {isLoading ? (
+                            <>
+                                <span className="animate-spin text-2xl">⟳</span> Invocation...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="w-5 h-5" /> {currentMode === NarratorMode.COMBAT ? 'Générer la Narration' : 'Générer l\'Objet'}
+                            </>
+                        )}
+                    </span>
+                    {!isLoading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>}
+                </button>
+            </div>
+        )}
 
       </div>
     </div>

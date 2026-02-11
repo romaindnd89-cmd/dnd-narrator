@@ -6,7 +6,8 @@
     <meta name="theme-color" content="#050505" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>D&D Action Narrator</title>
+    <title>D&D Action Narrator | Par Romain.DnD89</title>
+    <meta name="description" content="Générateur de narrations de combat Dark Fantasy pour vos sessions de JdR.">
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,14 +42,19 @@
     </script>
     <style>
       body {
-        background-color: #050505;
-        background-image: radial-gradient(circle at 50% 50%, #1a1b1e 0%, #000000 100%);
+        background-color: #000000;
+        background-image: radial-gradient(circle at 50% 50%, #111111 0%, #000000 100%);
         color: #dcd0b9;
         overscroll-behavior-y: none;
       }
-      ::-webkit-scrollbar { width: 10px; }
-      ::-webkit-scrollbar-track { background: #0f1012; }
-      ::-webkit-scrollbar-thumb { background: #4a0101; border: 1px solid #8a6e36; }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #050505; }
+      ::-webkit-scrollbar-thumb { background: #4a0101; border: 1px solid #8a6e36; border-radius: 4px; }
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
     </style>
   <script type="importmap">
 {
