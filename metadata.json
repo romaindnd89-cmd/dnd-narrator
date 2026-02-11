@@ -1,0 +1,5 @@
+{
+  "name": "D&D Action Narrator",
+  "description": "A Dark Fantasy combat narration generator for D&D sessions using Gemini AI.",
+  "requestFramePermissions": []
+}
