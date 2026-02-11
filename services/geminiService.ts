@@ -2,74 +2,66 @@
 import { GoogleGenAI } from "@google/genai";
 import { BodyPart, CombatState, DiceResult, LootType, NarrationStyle, NarratorMode } from "../types";
 
-const JUNK_CATEGORIES = [
-  "Organique / Dégoûtant (ex: dents, cheveux, nourriture fossilisée...)",
-  "Sentimental / Triste (ex: lettre d'amour déchirée, jouet d'enfant cassé, médaillon vide...)",
-  "Bureaucratique / Ennuyeux (ex: liste de courses, reçu de taxe, formulaire vierge...)",
-  "Curiosité Naturelle (ex: caillou en forme de tête, plume miteuse, coquille d'escargot géant...)",
-  "Débris d'équipement (ex: boucle de ceinture tordue, lacet en cuir, manche de dague sans lame...)",
-  "Objet du quotidien abîmé (ex: cuillère tordue, peigne édenté, chaussette seule...)",
-  "Mystique de pacotille (ex: idole en argile moche, gris-gris fait de brindilles, fausse gemme en verre...)"
-];
-
 export const generateNarration = async (combatState: CombatState, apiKey: string): Promise<string> => {
   if (apiKey === 'DEMO') {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const text = combatState.mode === NarratorMode.COMBAT
-                ? `[MODE DÉMO] Le guerrier lève son arme (${combatState.weapon}) et frappe avec précision. (Utilisez une vraie clé API pour une narration complète).`
-                : `[MODE DÉMO] En fouillant, vous trouvez une vieille pièce de monnaie rouillée.`;
-            resolve(text);
-        }, 1000);
-    });
+    return "**Nom** : Fiole de Sang Séché\n**Description** : Une petite fiole scellée par de la cire noire.\n**Effet** : Réactif d'alchimie. Donne +1 aux jets de Nécromancie.";
   }
 
+  // Utilisation de Gemini 3 Pro pour plus de fiabilité sur les formats complexes
   const ai = new GoogleGenAI({ apiKey });
 
   try {
     const { weapon, bodyPart, result, target, style, mode, lootType } = combatState;
     
-    let styleInstruction = "";
-    switch (style) {
-        case NarrationStyle.SIMPLE:
-            styleInstruction = "Format : Une seule phrase courte et brutale.";
-            break;
-        case NarrationStyle.MEDIUM:
-            styleInstruction = "Format : 2 phrases. Action et conséquence.";
-            break;
-        case NarrationStyle.IMMERSIVE:
-        default:
-            styleInstruction = "Format : Un paragraphe riche et viscéral. Utilise le vocabulaire de la dark fantasy (sang, acier, terreur, poussière).";
-            break;
-    }
+    let lengthInstruction = "";
+    if (style === NarrationStyle.SIMPLE) lengthInstruction = "Sois très bref (1 phrase).";
+    if (style === NarrationStyle.MEDIUM) lengthInstruction = "Fais un paragraphe court.";
+    if (style === NarrationStyle.IMMERSIVE) lengthInstruction = "Sois très descriptif et immersif.";
 
-    let systemInstruction = "Tu es un Maître du Donjon expert en narration Dark Fantasy. Ton style est sérieux, sombre et épique. Ne donne jamais de règles techniques (ex: 'faites un jet'), décris uniquement l'action.";
-
+    const systemInstruction = "Tu es un Maître du Donjon expert en Dark Fantasy. Ton style est viscéral, sombre et élégant. Tu ne sors JAMAIS du personnage. Tu ne donnes aucune introduction (pas de 'Voici...', pas de 'Tu trouves...').";
+    
     let prompt = "";
-
     if (mode === NarratorMode.LOOT) {
-        const location = target.trim() ? target : "un lieu sombre";
-        const randomJunkCategory = JUNK_CATEGORIES[Math.floor(Math.random() * JUNK_CATEGORIES.length)];
-        prompt = `Décris un objet trouvé dans ${location}. Type : ${lootType === LootType.USEFUL ? "Petit objet utile" : "Bric-à-brac inutile"}. Thème : ${randomJunkCategory}. ${styleInstruction}`;
+        const location = target.trim() ? target : "cet endroit lugubre";
+        if (lootType === LootType.USEFUL) {
+            prompt = `Le joueur fouille ${location} et trouve un OBJET UTILE (consommable ou petit outil). 
+            ${lengthInstruction}
+            RÉPONDS EXCLUSIVEMENT AVEC CE FORMAT (SANS RIEN D'AUTRE) :
+            **Nom** : [Nom de l'objet]
+            **Description** : [L'apparence de l'objet]
+            **Effet** : [L'utilité concrète]`;
+        } else {
+            prompt = `Le joueur fouille ${location}. Décris un objet sans valeur, étrange ou macabre. 
+            ${lengthInstruction}
+            Format : **Nom** : [Nom] puis la description.`;
+        }
     } else {
-        const targetDesc = target.trim() ? target : "l'adversaire";
-        const bodyPartDesc = (bodyPart && bodyPart !== BodyPart.UNSPECIFIED) ? bodyPart : "une zone vitale";
-        prompt = `Décris cette action de combat : Arme : ${weapon}. Cible : ${targetDesc}. Zone : ${bodyPartDesc}. Résultat : ${result}. ${styleInstruction}. Ne dis jamais 'le combat continue'.`;
+        const targetDesc = target.trim() ? target : "l'ennemi";
+        const bodyPartDesc = (bodyPart && bodyPart !== BodyPart.UNSPECIFIED) ? bodyPart : "le corps";
+        prompt = `Action : ${weapon} sur ${targetDesc} (${bodyPartDesc}). Résultat du dé : ${result}. 
+        ${lengthInstruction}
+        Raconte la scène de façon sombre.`;
     }
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview', // Passage au modèle Pro pour éviter les troncatures
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 1.0,
+        temperature: 0.8,
+        maxOutputTokens: 500,
+        // On ajoute un petit budget de réflexion pour assurer la qualité du format
+        thinkingConfig: { thinkingBudget: 100 }
       }
     });
 
-    return response.text || "La vision s'obscurcit... (Réponse vide)";
+    const text = response.text;
+    if (!text || text.trim().length < 3) {
+        throw new Error("L'esprit de la narration s'est évaporé... Réessaie.");
+    }
+    return text;
   } catch (error: any) {
-    console.error("Erreur Gemini:", error);
-    // On renvoie l'erreur brute pour que App.tsx puisse la traiter
+    console.error("Gemini Error:", error);
     throw error;
   }
 };
