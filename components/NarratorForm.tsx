@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType } from '../types';
-import { Sword, Skull, Target, Sparkles, User, BookOpen, Search, Gem, Archive, Dices } from 'lucide-react';
+import { Sword, Skull, Target, Sparkles, User, BookOpen, Search, Gem, Archive, Dices, ZapOff } from 'lucide-react';
 
 interface NarratorFormProps {
   combatState: CombatState;
@@ -215,6 +215,15 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
         {/* === DICE INPUTS === */}
         {currentMode === NarratorMode.DICE && (
             <div className="space-y-6 animate-fade-in">
+                 <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-gold-antique font-header uppercase tracking-widest text-sm flex items-center gap-2">
+                        <Dices className="w-4 h-4" /> Vos Dés de Destinée
+                    </h3>
+                    <div className="px-2 py-0.5 rounded bg-green-900/30 border border-green-500/30 flex items-center gap-1.5 shadow-sm">
+                        <ZapOff className="w-3 h-3 text-green-500" />
+                        <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Calcul Local (Sans API)</span>
+                    </div>
+                 </div>
                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {diceTypes.map((dice) => (
                         <button
