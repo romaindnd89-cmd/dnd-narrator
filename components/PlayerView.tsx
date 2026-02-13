@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SessionState } from '../types';
-import { Box, User, Shield, Wifi, WifiOff, Loader2, AlertCircle, Zap } from 'lucide-react';
+import { Box, User, Shield, Wifi, WifiOff, Loader2, AlertCircle, Zap, AlertTriangle, Skull, Sparkles, Wand2 } from 'lucide-react';
 import { initSupabase, subscribeToSession, getSessionFromCloud } from '../services/supabaseService';
 
 const atou = (str: string) => {
@@ -34,145 +34,129 @@ const PlayerView: React.FC<PlayerViewProps> = ({ data }) => {
             if (initialData.cloudConfig) {
                 initSupabase(initialData.cloudConfig.url, initialData.cloudConfig.key);
                 setIsLive(true);
-                
                 const cloudSession = await getSessionFromCloud(initialData.id);
-                if (cloudSession) {
-                    setSession(cloudSession);
-                } else {
-                    setErrorMsg("Session Cloud introuvable. Demandez au MJ de renvoyer le lien.");
-                }
-
-                subscribeToSession(initialData.id, (updatedSession) => {
-                    setSession(updatedSession);
-                });
+                if (cloudSession) setSession(cloudSession);
+                else setErrorMsg("Session Cloud introuvable.");
+                subscribeToSession(initialData.id, (updatedSession) => setSession(updatedSession));
             } else {
                 setSession(initialData);
             }
         } catch (e: any) {
-            console.error("Decoding error:", e);
-            setErrorMsg(e.message || "Impossible de charger le Grimoire.");
+            setErrorMsg(e.message || "Erreur de chargement.");
         } finally {
             setIsLoading(false);
         }
     };
-
     startSession();
   }, [data]);
 
-  if (isLoading) {
-    return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center text-gold-antique">
-            <Loader2 className="w-12 h-12 animate-spin mb-4" />
-            <p className="font-fantasy uppercase tracking-widest text-sm">Ouverture du Grimoire...</p>
-        </div>
-    );
-  }
-
-  if (errorMsg || !session) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-8 text-center">
-        <div className="w-full max-w-sm p-8 border-2 border-blood-red/30 bg-darker-metal rounded-2xl shadow-glow-red">
-           <AlertCircle className="w-12 h-12 text-blood-red mx-auto mb-4" />
-           <h2 className="font-header text-gold-antique uppercase mb-2">Erreur de Magie</h2>
-           <p className="text-xs text-parchment/60 leading-relaxed italic">{errorMsg || "Le lien semble expiré ou invalide."}</p>
-           <button onClick={() => window.location.hash = ''} className="mt-8 w-full py-3 bg-blood-dark/50 border border-blood-red/30 rounded text-[10px] text-parchment uppercase tracking-widest font-bold">Retourner à l'Auberge</button>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen bg-black flex items-center justify-center text-gold-antique"><Loader2 className="animate-spin mr-2" /> Ouverture du grimoire...</div>;
+  if (!session) return <div className="min-h-screen bg-black flex items-center justify-center text-red-500">Erreur critique : lien corrompu.</div>;
 
   return (
     <div className="min-h-screen bg-[#050505] text-parchment font-body pb-12 overflow-x-hidden">
-      
       <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] uppercase font-bold tracking-widest backdrop-blur-md transition-all ${isLive ? 'bg-green-900/20 border-green-500/40 text-green-400' : 'bg-gold-dark/10 border-gold-dark/30 text-gold-antique'}`}>
-              {isLive ? <Wifi className="w-3 h-3 animate-pulse shadow-[0_0_5px_#22c55e]" /> : <WifiOff className="w-3 h-3" />}
-              {isLive ? 'Synchro Magique Active' : 'Mode Hors-Ligne'}
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] uppercase font-bold tracking-widest backdrop-blur-md ${isLive ? 'bg-green-900/20 border-green-500/40 text-green-400' : 'bg-gold-dark/10 border-gold-dark/30 text-gold-antique'}`}>
+              {isLive ? <Wifi className="w-3 h-3 animate-pulse" /> : <WifiOff className="w-3 h-3" />}
+              {isLive ? 'Synchro Live' : 'Hors-Ligne'}
           </div>
       </div>
 
-      <div className="relative h-48 bg-blood-dark flex flex-col items-center justify-center border-b-2 border-gold-dark/40 shadow-2xl">
-        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/black-paper.png')]"></div>
-        <div className="relative z-10 text-center px-4">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-gold-antique/60 mb-1 block">Grimoire de Session</span>
-            <h1 className="font-header text-2xl text-gold-antique uppercase tracking-widest drop-shadow-md">{session.name}</h1>
-            <div className="h-0.5 w-16 bg-gold-dark/50 mx-auto mt-3"></div>
-        </div>
+      <div className="h-48 bg-blood-dark flex flex-col items-center justify-center border-b-2 border-gold-dark/40 shadow-2xl relative">
+        <div className="absolute inset-0 bg-black/40"></div>
+        <h1 className="font-header text-3xl md:text-5xl text-gold-antique uppercase tracking-[0.3em] relative z-10 drop-shadow-glow">{session.name}</h1>
       </div>
 
-      <div className="max-w-md mx-auto px-4 -mt-10 relative z-20 space-y-6">
-        {session.players.length === 0 ? (
-            <div className="bg-darker-metal p-12 rounded-2xl border border-dashed border-white/5 text-center">
-                <User className="w-12 h-12 text-gray-800 mx-auto mb-4 opacity-20" />
-                <p className="text-xs text-gray-700 uppercase font-bold">Aucun héros détecté</p>
-            </div>
-        ) : (
-            session.players.map(player => (
-            <div key={player.id} className="bg-darker-metal border-2 border-gold-dark/30 rounded-2xl overflow-hidden shadow-2xl animate-fade-in">
-                <div className="p-4 bg-black/60 border-b border-gold-dark/20 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gold-dark/10 border border-gold-dark/30 flex items-center justify-center">
-                            <User className="w-5 h-5 text-gold-antique" />
+      <div className="max-w-md mx-auto px-4 -mt-10 space-y-8 relative z-20 pb-20">
+        {session.players.map(player => {
+            const hasConditions = player.conditions && player.conditions.length > 0;
+            return (
+                <div key={player.id} className={`bg-darker-metal border-2 rounded-2xl overflow-hidden shadow-[0_10px_50px_rgba(0,0,0,0.8)] transition-all ${hasConditions ? 'border-gold-antique' : 'border-gold-dark/30'}`}>
+                    <div className={`p-5 border-b flex items-center justify-between bg-black/60 border-gold-dark/20`}>
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-full border bg-gold-dark/10 border-gold-dark/20`}>
+                                <User className="w-5 h-5 text-gold-dark" />
+                            </div>
+                            <span className={`font-header text-xl uppercase tracking-widest text-gold-antique`}>{player.name}</span>
                         </div>
-                        <span className="font-header text-lg text-gold-antique uppercase">{player.name}</span>
                     </div>
-                    <Shield className="w-5 h-5 text-blood-red/40" />
-                </div>
 
-                <div className="p-4 bg-gold-dark/5 grid grid-cols-3 gap-3">
-                    <div className="bg-black/40 p-3 rounded-xl border border-yellow-600/30 text-center shadow-inner">
-                        <span className="block text-xl font-bold text-yellow-500 leading-none mb-1">{player.currency.gold}</span>
-                        <span className="text-[9px] uppercase font-bold text-yellow-600/60 tracking-tighter">Gold (PO)</span>
-                    </div>
-                    <div className="bg-black/40 p-3 rounded-xl border border-gray-400/30 text-center shadow-inner">
-                        <span className="block text-xl font-bold text-gray-300 leading-none mb-1">{player.currency.silver}</span>
-                        <span className="text-[9px] uppercase font-bold text-gray-400/60 tracking-tighter">Ar (PA)</span>
-                    </div>
-                    <div className="bg-black/40 p-3 rounded-xl border border-orange-700/30 text-center shadow-inner">
-                        <span className="block text-xl font-bold text-orange-600 leading-none mb-1">{player.currency.copper}</span>
-                        <span className="text-[9px] uppercase font-bold text-orange-700/60 tracking-tighter">Cu (PC)</span>
-                    </div>
-                </div>
+                    {/* ÉTATS ACTIFS (CONDITIONS) */}
+                    {hasConditions && (
+                        <div className="p-5 bg-black/40 border-b border-white/5 space-y-3">
+                            <h4 className="text-[9px] uppercase tracking-[0.3em] text-gold-dark font-bold flex items-center gap-2">
+                                <Sparkles className="w-3 h-3" /> États & Effets Actifs
+                            </h4>
+                            {player.conditions.map(c => {
+                                const isMalus = c.isPenalty;
+                                return (
+                                    <div key={c.id} className={`p-4 bg-black/40 border rounded-xl relative overflow-hidden group transition-all ${isMalus ? 'border-blood-red/40' : 'border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+                                        <div className={`absolute inset-0 bg-gradient-to-r ${isMalus ? 'from-blood-red/10' : 'from-emerald-500/10'} to-transparent`}></div>
+                                        <div className="relative z-10 flex items-start gap-3">
+                                            {isMalus ? <Skull className="w-5 h-5 text-blood-red mt-1 shrink-0 animate-pulse" /> : <Wand2 className="w-5 h-5 text-emerald-400 mt-1 shrink-0 animate-pulse" />}
+                                            <div>
+                                                <p className={`font-header text-xs uppercase tracking-widest mb-1 ${isMalus ? 'text-blood-red' : 'text-emerald-400'}`}>{c.name}</p>
+                                                <p className="text-[11px] font-body italic text-parchment/80 leading-relaxed">{c.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
 
-                <div className="p-5 space-y-3 bg-black/20">
-                    <h4 className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-gold-dark/60 font-bold mb-4 border-b border-white/5 pb-2">
-                        <Box className="w-3.5 h-3.5" /> Sac de l'aventurier
-                    </h4>
-                    {player.inventory.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-4">
-                            {player.inventory.map(item => (
-                                <div key={item.id} className="bg-white/5 border border-white/5 rounded-xl p-4 flex gap-4 items-start animate-fade-in group shadow-lg">
-                                    <div className="w-16 h-16 rounded-lg bg-black/60 flex items-center justify-center shrink-0 border border-gold-dark/20 overflow-hidden shadow-lg mt-1">
-                                        {item.imageUrl ? (
-                                            <img src={item.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={item.name} />
-                                        ) : (
-                                            <Box className="w-8 h-8 text-gray-700" />
-                                        )}
+                    <div className="p-4 bg-gold-dark/5 grid grid-cols-3 gap-3 border-b border-white/5">
+                        <div className="bg-black/40 p-4 rounded-xl border border-yellow-600/30 text-center shadow-inner">
+                            <span className="block text-2xl font-bold text-yellow-500 leading-none mb-1">{player.currency.gold}</span>
+                            <span className="text-[8px] uppercase font-bold text-yellow-600/60 tracking-widest">Or</span>
+                        </div>
+                        <div className="bg-black/40 p-4 rounded-xl border border-gray-400/30 text-center shadow-inner">
+                            <span className="block text-2xl font-bold text-gray-300 leading-none mb-1">{player.currency.silver}</span>
+                            <span className="text-[8px] uppercase font-bold text-gray-400/60 tracking-widest">Argent</span>
+                        </div>
+                        <div className="bg-black/40 p-4 rounded-xl border border-orange-700/30 text-center shadow-inner">
+                            <span className="block text-2xl font-bold text-orange-600 leading-none mb-1">{player.currency.copper}</span>
+                            <span className="text-[8px] uppercase font-bold text-orange-700/60 tracking-widest">Cuivre</span>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4 bg-black/20">
+                        <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                            <h4 className="text-[10px] uppercase tracking-[0.3em] text-gold-dark/60 font-bold">Inventaire</h4>
+                            <span className="text-[8px] text-white/20 uppercase tracking-widest">Sac de voyage</span>
+                        </div>
+                        
+                        {(player.inventory && player.inventory.length > 0) ? (
+                            player.inventory.map(item => (
+                                <div key={item.id} className={`bg-white/5 border rounded-2xl p-4 flex gap-5 items-start shadow-xl transition-all ${item.isPenalty ? 'border-blood-red/40 bg-blood-red/5' : 'border-emerald-500/20 bg-emerald-500/5'}`}>
+                                    <div className={`w-20 h-20 rounded-xl bg-black/60 flex items-center justify-center shrink-0 border overflow-hidden ${item.isPenalty ? 'border-blood-red shadow-glow-red/40' : 'border-emerald-500/40'}`}>
+                                        {item.imageUrl ? <img src={item.imageUrl} className="w-full h-full object-cover" alt="" /> : <Box className={`w-10 h-10 ${item.isPenalty ? 'text-blood-red' : 'text-emerald-500'}`} />}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between mb-2">
-                                            <p className="font-header text-md text-gold-antique uppercase truncate leading-tight tracking-wider">{item.name}</p>
-                                            <span className="text-[10px] font-header text-gold-antique bg-gold-dark/20 px-2 rounded-full border border-gold-dark/30">x{item.quantity}</span>
+                                            <p className={`font-header text-lg uppercase truncate tracking-wider ${item.isPenalty ? 'text-blood-red font-bold' : 'text-emerald-400 font-bold'}`}>
+                                                {item.name}
+                                            </p>
+                                            <div className={`px-2 py-1 rounded-md border ${item.isPenalty ? 'bg-blood-red/20 border-blood-red/30' : 'bg-emerald-500/20 border-emerald-500/30'}`}>
+                                                <span className={`text-[10px] font-header ${item.isPenalty ? 'text-blood-red' : 'text-emerald-400'}`}>x{item.quantity}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-start gap-2 bg-black/30 p-2 rounded border border-white/5">
-                                            <Zap className="w-3 h-3 text-gold-antique shrink-0 mt-0.5 opacity-50" />
-                                            <p className="text-[10px] text-parchment/80 italic font-body leading-relaxed">{item.description}</p>
+                                        <div className={`p-3 rounded-lg border leading-relaxed ${item.isPenalty ? 'bg-blood-red/10 border-blood-red/20' : 'bg-black/40 border-white/5 shadow-inner'}`}>
+                                            <p className={`text-[10px] md:text-[11px] italic font-body ${item.isPenalty ? 'text-blood-red/80' : 'text-parchment/80'}`}>{item.description}</p>
                                         </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 opacity-20 italic text-xs">Le sac est vide...</div>
-                    )}
+                            ))
+                        ) : (
+                            <div className="py-10 text-center opacity-20 flex flex-col items-center gap-4">
+                                <Box className="w-12 h-12" />
+                                <span className="text-[10px] font-header uppercase tracking-widest">Le sac est vide...</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-            ))
-        )}
-        
-        <p className="text-center text-[9px] text-gray-700 uppercase tracking-widest font-header pt-8 opacity-40">
-            Propulsé par D&D Action Narrator
-        </p>
+            );
+        })}
       </div>
     </div>
   );
