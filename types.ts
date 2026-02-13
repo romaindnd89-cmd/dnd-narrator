@@ -38,6 +38,12 @@ export enum InteractionAction {
   RIDDLE = 'Énigme / Puzzle (Bloqué)',
 }
 
+export enum RiddleDifficulty {
+  EASY = 'Niveau 1 (Facile / Intuitif)',
+  MEDIUM = 'Niveau 2 (Moyen / Réflexion)',
+  HARD = 'Niveau 3 (Difficile / Abstrait)',
+}
+
 export enum EnvironmentType {
   DUNGEON = 'Donjon / Crypte',
   CASTLE = 'Château / Fort',
@@ -101,69 +107,48 @@ export enum DiceResult {
 export interface CombatState {
   mode: NarratorMode;
   style: NarrationStyle;
-  // Combat props
   weapon: WeaponType;
   bodyPart: BodyPart;
   result: DiceResult;
-  // Loot props
   lootType: LootType;
-  // World props
   environmentType: EnvironmentType;
   atmosphere: WorldAtmosphere;
-  // Interactive props
   interactiveObj: InteractiveObjectType;
   interactionAction: InteractionAction;
-  // Shared props
-  target: string; // Enemy name OR Loot location OR Specific Place Name
+  riddleDifficulty: RiddleDifficulty;
+  target: string;
 }
 
-export interface NarrationResponse {
-  text: string;
+// --- VAULT TYPES ---
+export interface Currency {
+  copper: number;
+  silver: number;
+  gold: number;
 }
 
-// Character Profile Interfaces
-export interface AbilityStats {
-  str: number;
-  dex: number;
-  con: number;
-  int: number;
-  wis: number;
-  cha: number;
-}
-
-export interface AbilityModifiers {
-  str: string;
-  dex: string;
-  con: string;
-  int: string;
-  wis: string;
-  cha: string;
-}
-
-export interface Skill {
-  name: string;
-  mod: string;
-  proficient: boolean;
-  stat: string;
-}
-
-export interface SavingThrow {
-  name: string;
-  mod: string;
-  proficient: boolean;
-}
-
-export interface Attack {
-  name: string;
-  bonus: string;
-  damage: string;
-}
-
-export interface Feature {
+export interface VaultItem {
+  id: string;
   name: string;
   description: string;
+  imageUrl?: string;
+  timestamp: number;
 }
 
+export interface Player {
+  id: string;
+  name: string;
+  currency: Currency;
+  inventory: VaultItem[];
+}
+
+export interface SessionState {
+  id: string;
+  name: string;
+  players: Player[];
+  isActive: boolean;
+}
+
+// --- CHARACTER SHEET TYPES ---
 export interface CharacterProfile {
   name: string;
   class: string;
@@ -173,27 +158,41 @@ export interface CharacterProfile {
   playerName: string;
   race: string;
   alignment: string;
-  xp: number;
-  stats: AbilityStats;
-  modifiers: AbilityModifiers;
+  xp: string;
+  stats: {
+    str: number;
+    dex: number;
+    con: number;
+    int: number;
+    wis: number;
+    cha: number;
+  };
+  modifiers: {
+    str: string;
+    dex: string;
+    con: string;
+    int: string;
+    wis: string;
+    cha: string;
+  };
   proficiencyBonus: string;
-  savingThrows: SavingThrow[];
-  skills: Skill[];
+  savingThrows: { name: string; mod: string; proficient: boolean }[];
+  skills: { name: string; mod: string; proficient: boolean; stat: string }[];
   passivePerception: number;
   ac: number;
-  initiative: string;
+  initiative: number;
   speed: string;
   hpMax: number;
   hpCurrent: number;
   hitDice: string;
-  attacks: Attack[];
+  attacks: { name: string; bonus: string; damage: string }[];
   treasure: string;
   equipment: string[];
   personalityTraits: string;
   ideals: string;
   bonds: string;
   flaws: string;
-  featuresAndTraits: Feature[];
+  featuresAndTraits: { name: string; description: string }[];
   otherProficiencies: string[];
   visualPrompt: string;
   age: string;

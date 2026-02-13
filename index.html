@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -55,6 +56,11 @@
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+      @keyframes pulse-gold {
+        0%, 100% { box-shadow: 0 0 5px rgba(197, 160, 89, 0.2); }
+        50% { box-shadow: 0 0 20px rgba(197, 160, 89, 0.5); }
+      }
+      .animate-pulse-gold { animation: pulse-gold 2s infinite; }
     </style>
   <script type="importmap">
 {
@@ -63,7 +69,8 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0"
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.45.4"
   }
 }
 </script>
