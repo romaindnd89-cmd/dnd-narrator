@@ -2,6 +2,8 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { BodyPart, CombatState, InteractionAction, InteractiveObjectType, LootType, NarrationStyle, NarratorMode } from "../types";
 
+const getApiKey = () => localStorage.getItem('dnd_api_key') || process.env.API_KEY || "";
+
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
   const len = binaryString.length;
@@ -31,17 +33,8 @@ async function decodeAudioData(
   return buffer;
 }
 
-// Configuration des filtres de sécurité pour autoriser le contenu créatif de combat JdR
-const safetySettings = [
-  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
-];
-
 export const generateNarration = async (combatState: CombatState): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+  const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const { weapon, bodyPart, result, target, style, mode, lootType, environmentType, atmosphere, interactiveObj, interactionAction, riddleDifficulty } = combatState;
   
   let lengthInstruction = "";
@@ -84,15 +77,12 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
       config: {
         systemInstruction: systemInstruction,
         temperature: 0.8,
-        safetySettings: safetySettings
       }
     });
     
-    if (!response.text) {
-        throw new Error("L'IA a bloqué la réponse pour des raisons de sécurité.");
-    }
-    
-    return response.text;
+    const text = response.text;
+    if (!text) throw new Error("Réponse vide de l'IA.");
+    return text;
   } catch (error: any) {
     console.error("Gemini Error:", error);
     throw error;
@@ -100,7 +90,7 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
 };
 
 export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const cleanText = text.replace(/\*\*/g, '').replace(/\|/g, ', ');
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
@@ -108,7 +98,6 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
         config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } },
-            safetySettings: safetySettings
         },
     });
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -118,18 +107,17 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
 };
 
 export const generateCharacterImage = async (prompt: string): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: prompt }] },
-            config: { 
-                imageConfig: { aspectRatio: "1:1" },
-                safetySettings: safetySettings
-            }
+            config: { imageConfig: { aspectRatio: "1:1" } }
         });
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        for (const candidate of response.candidates || []) {
+            for (const part of candidate.content.parts) {
+                if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
         throw new Error("Img error.");
     } catch (error: any) {
