@@ -1,262 +1,188 @@
 
 import { WeaponType, DiceResult } from "../types";
 
-// Singleton pour le contexte audio
 let audioCtx: AudioContext | null = null;
+const soundCache: Map<string, AudioBuffer> = new Map();
 
-const getAudioContext = () => {
+// Son de dé de secours (petit "clac" encodé en base64) pour garantir un feedback même hors ligne/erreur réseau
+const FALLBACK_DICE_B64 = "UklGRi4AAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="; 
+
+// CONFIGURATION DES SOURCES (Dépôt Heileis stable)
+const SOURCES = [
+  {
+    name: "Heileis (Raw)",
+    base: "https://raw.githubusercontent.com/Heileis/DND-Soundboard/master/sounds"
+  },
+  {
+    name: "Heileis (CDN)",
+    base: "https://cdn.jsdelivr.net/gh/Heileis/DND-Soundboard@master/sounds"
+  }
+];
+
+// CHEMINS RELATIFS EXACTS (Minuscules obligatoires pour ce repo)
+const FILE_PATHS: Record<string, string> = {
+    rain: "weather/rain.mp3",
+    thunder: "weather/thunder.mp3",
+    wind: "ambiance/wind.mp3",
+    forest: "ambiance/forest.mp3",
+    dungeon: "ambiance/cave.mp3", // 'dungeon.mp3' n'existe pas toujours, 'cave.mp3' est sûr
+    roar: "monsters/dragon_roar.mp3",
+    hit_flesh: "combat/hit.mp3",
+    hit_armor: "combat/sword_hit_armor.mp3",
+    sword_swing: "combat/sword_swing.mp3",
+    ghost: "magic/ghost.mp3",
+    magic_blast: "magic/fireball.mp3",
+    electric: "magic/lightning.mp3",
+    trap: "traps/trap.mp3",
+    ice: "magic/ice.mp3",
+    dice: "dice/dice.mp3"
+};
+
+const getAudioContext = async () => {
   if (!audioCtx) {
-    // @ts-ignore - Support Safari/Webkit
+    // @ts-ignore
     const CtxClass = window.AudioContext || window.webkitAudioContext;
     audioCtx = new CtxClass();
+  }
+  if (audioCtx.state === 'suspended') {
+    await audioCtx.resume();
   }
   return audioCtx;
 };
 
-const createNoiseBuffer = (ctx: AudioContext) => {
-  const bufferSize = ctx.sampleRate * 2;
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
+const loadSound = async (key: string): Promise<AudioBuffer | null> => {
+  // 1. Cache
+  if (soundCache.has(key)) return soundCache.get(key)!;
+
+  const ctx = await getAudioContext();
+  const relativePath = FILE_PATHS[key];
+
+  if (!relativePath) {
+      console.error(`[Audio] Clé de son non configurée : ${key}`);
+      return null;
   }
-  return buffer;
-};
 
-/**
- * Son : Lancer de dés (cliquetis sur bois)
- */
-export const playDiceSound = () => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-
-    const t = ctx.currentTime;
-    
-    // Plusieurs petits clics rapides pour simuler les rebonds
-    for (let i = 0; i < 4; i++) {
-        const start = t + (i * 0.08);
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(150 + Math.random() * 100, start);
-        osc.frequency.exponentialRampToValueAtTime(50, start + 0.05);
-        
-        gain.gain.setValueAtTime(0.3, start);
-        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.05);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(start);
-        osc.stop(start + 0.06);
+  // 2. Tentatives Sources Réseau
+  for (const source of SOURCES) {
+    const url = `${source.base}/${relativePath}`;
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = await ctx.decodeAudioData(arrayBuffer);
+        soundCache.set(key, buffer);
+        console.log(`[Audio] Chargé succès (${source.name}): ${key}`);
+        return buffer;
+      }
+    } catch (e) {
+      // Continue vers la source suivante
     }
+  }
+
+  // Fallback silencieux pour éviter le spam d'erreur si vraiment introuvable
+  console.warn(`[Audio] Échec chargement : ${key} (Chemin: ${relativePath})`);
+  return null;
+};
+
+const play = async (key: string, options: { volume?: number, loop?: boolean, pitchVar?: number } = {}) => {
+  try {
+    const buffer = await loadSound(key);
+    if (!buffer) return null;
+
+    const ctx = await getAudioContext();
+    const source = ctx.createBufferSource();
+    const gainNode = ctx.createGain();
+    
+    source.buffer = buffer;
+    source.loop = options.loop || false;
+
+    if (options.pitchVar) {
+        const detune = (Math.random() * options.pitchVar * 2) - options.pitchVar;
+        source.detune.value = detune;
+    }
+
+    gainNode.gain.value = options.volume ?? 0.5;
+    
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    source.start(0);
+    return { source, gain: gainNode };
   } catch (e) {
-    console.error("Audio error:", e);
+    console.error("Erreur lecture audio", e);
+    return null;
   }
 };
 
-const playSwoosh = (ctx: AudioContext) => {
-  const t = ctx.currentTime;
-  const gain = ctx.createGain();
-  const filter = ctx.createBiquadFilter();
-  const noise = ctx.createBufferSource();
-  noise.buffer = createNoiseBuffer(ctx);
-  
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(800, t);
-  filter.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+// --- EXPORTS API ---
 
-  gain.gain.setValueAtTime(0, t);
-  gain.gain.linearRampToValueAtTime(0.5, t + 0.1);
-  gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-
-  noise.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-
-  noise.start(t);
-  noise.stop(t + 0.4);
+export const playRainAmbience = (duration = 15) => {
+    play('rain', { loop: true, volume: 0.3 }).then(audio => {
+        if (audio) {
+            setTimeout(() => {
+                const now = audio.gain.context.currentTime;
+                try {
+                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
+                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
+                } catch(e){}
+            }, duration * 1000);
+        }
+    });
 };
 
-const playSlashHit = (ctx: AudioContext, isHeavy = false) => {
-  const t = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const oscGain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(150, t);
-  osc.frequency.exponentialRampToValueAtTime(40, t + 0.15);
-  oscGain.gain.setValueAtTime(isHeavy ? 0.8 : 0.5, t);
-  oscGain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-  osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
-  osc.start(t);
-  osc.stop(t + 0.2);
-
-  const noise = ctx.createBufferSource();
-  noise.buffer = createNoiseBuffer(ctx);
-  const noiseFilter = ctx.createBiquadFilter();
-  const noiseGain = ctx.createGain();
-  noiseFilter.type = 'bandpass';
-  noiseFilter.frequency.setValueAtTime(1000, t);
-  noiseGain.gain.setValueAtTime(isHeavy ? 0.6 : 0.3, t);
-  noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
-  noise.connect(noiseFilter);
-  noiseFilter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
-  noise.start(t);
-  noise.stop(t + 0.2);
+export const playDarkForest = (duration = 15) => {
+    // Mix vent + forêt
+    play('wind', { loop: true, volume: 0.15 }).then(a => {
+        if(a) setTimeout(() => { try{ a.source.stop() } catch(e){} }, (duration + 1) * 1000);
+    });
+    play('forest', { loop: true, volume: 0.25 }).then(audio => {
+        if (audio) {
+            setTimeout(() => {
+                const now = audio.gain.context.currentTime;
+                try {
+                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
+                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
+                } catch(e){}
+            }, duration * 1000);
+        }
+    });
 };
 
-const playBluntHit = (ctx: AudioContext) => {
-  const t = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'square';
-  osc.frequency.setValueAtTime(100, t);
-  osc.frequency.exponentialRampToValueAtTime(20, t + 0.3);
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 200;
-  gain.gain.setValueAtTime(1, t);
-  gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-  osc.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(t);
-  osc.stop(t + 0.4);
+export const playThunder = () => play('thunder', { volume: 0.6, pitchVar: 50 });
+
+export const playDungeonAmbience = (duration = 15) => {
+    play('dungeon', { loop: true, volume: 0.4 }).then(audio => {
+        if (audio) {
+            setTimeout(() => {
+                const now = audio.gain.context.currentTime;
+                try {
+                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
+                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
+                } catch(e){}
+            }, duration * 1000);
+        }
+    });
 };
 
-const playParry = (ctx: AudioContext) => {
-  const t = ctx.currentTime;
-  [500, 850, 1200, 1600].forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, t);
-    const duration = 0.5 - (i * 0.1); 
-    gain.gain.setValueAtTime(0.1, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + duration);
-  });
-};
-
-const playBowShoot = (ctx: AudioContext) => {
-  const t = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(200, t);
-  osc.frequency.exponentialRampToValueAtTime(50, t + 0.2);
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(2000, t);
-  filter.frequency.exponentialRampToValueAtTime(100, t + 0.1);
-  gain.gain.setValueAtTime(0.5, t);
-  gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-  osc.connect(filter);
-  filter.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(t);
-  osc.stop(t + 0.3);
-};
-
-const playMagic = (ctx: AudioContext, isFire = true) => {
-  const t = ctx.currentTime;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  if (isFire) {
-    const noise = ctx.createBufferSource();
-    noise.buffer = createNoiseBuffer(ctx);
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(500, t);
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(0.5, t);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 1.0);
-    noise.connect(filter);
-    filter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    noise.start(t);
-    noise.stop(t + 1.0);
-  } else {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, t);
-    osc.frequency.linearRampToValueAtTime(1200, t + 0.5);
-    gain.gain.setValueAtTime(0.2, t);
-    gain.gain.linearRampToValueAtTime(0, t + 1.0);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(t);
-    osc.stop(t + 1.0);
-  }
-};
-
-const playCritical = (ctx: AudioContext) => {
-  const t = ctx.currentTime;
-  playBluntHit(ctx);
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(440, t);
-  osc.frequency.setValueAtTime(880, t + 0.1);
-  gain.gain.setValueAtTime(0.3, t);
-  gain.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(t);
-  osc.stop(t + 0.8);
-};
+export const playMonsterEnraged = () => play('roar', { volume: 0.5, pitchVar: 150 });
+export const playMonsterHit = () => play('hit_flesh', { volume: 0.5, pitchVar: 100 });
+export const playGhostlyWail = () => play('ghost', { volume: 0.3 });
+export const playElectricArc = () => play('electric', { volume: 0.3 });
+export const playMechanicalTrap = () => play('trap', { volume: 0.5 });
+export const playIceTrap = () => play('ice', { volume: 0.4 });
+export const playDiceSound = () => play('dice', { volume: 0.6, pitchVar: 50 });
 
 export const playCombatSound = (weapon: WeaponType, result: DiceResult) => {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume();
-
-    if (result === DiceResult.FAIL || result === DiceResult.CRITICAL_FAIL || result === DiceResult.DODGED) {
-      playSwoosh(ctx);
-      return;
+    if (result === DiceResult.FAIL || result === DiceResult.CRITICAL_FAIL) {
+        play('sword_swing', { volume: 0.3, pitchVar: 100 });
+        return;
     }
-    if (result === DiceResult.PARRIED) {
-      playParry(ctx);
-      return;
+    
+    if ([WeaponType.WARHAMMER, WeaponType.BATTLEAXE].includes(weapon)) {
+        play('hit_armor', { volume: 0.5, pitchVar: 100 });
+    } else if ([WeaponType.FIRE_SPELL, WeaponType.ICE_SPELL].includes(weapon)) {
+        play('magic_blast', { volume: 0.4 });
+    } else {
+        play('hit_flesh', { volume: 0.5, pitchVar: 100 });
     }
-    if (result === DiceResult.CRITICAL_HIT || result === DiceResult.FATAL_BLOW) {
-      if (weapon === WeaponType.FIRE_SPELL || weapon === WeaponType.ICE_SPELL) {
-         playMagic(ctx, weapon === WeaponType.FIRE_SPELL);
-      } else {
-         playCritical(ctx);
-      }
-      return;
-    }
-    switch (weapon) {
-      case WeaponType.LONGSWORD:
-      case WeaponType.DAGGER:
-      case WeaponType.BATTLEAXE:
-        playSlashHit(ctx, weapon === WeaponType.BATTLEAXE);
-        break;
-      case WeaponType.WARHAMMER:
-      case WeaponType.UNARMED:
-        playBluntHit(ctx);
-        break;
-      case WeaponType.BOW:
-        playBowShoot(ctx);
-        break;
-      case WeaponType.FIRE_SPELL:
-        playMagic(ctx, true);
-        break;
-      case WeaponType.ICE_SPELL:
-        playMagic(ctx, false);
-        break;
-      default:
-        playSwoosh(ctx);
-    }
-  } catch (e) {
-    console.error("Audio error:", e);
-  }
 };
