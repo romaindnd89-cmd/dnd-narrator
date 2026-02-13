@@ -2,7 +2,12 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { BodyPart, CombatState, InteractionAction, InteractiveObjectType, LootType, NarrationStyle, NarratorMode } from "../types";
 
-const getApiKey = () => localStorage.getItem('dnd_api_key') || process.env.API_KEY || "";
+// Fonction pour récupérer la clé : priorité à la saisie manuelle stockée en local
+const getApiKey = () => {
+  const localKey = localStorage.getItem('dnd_api_key');
+  if (localKey && localKey !== "DEMO") return localKey;
+  return process.env.API_KEY || "";
+};
 
 function decodeBase64(base64: string) {
   const binaryString = atob(base64);
@@ -34,7 +39,10 @@ async function decodeAudioData(
 }
 
 export const generateNarration = async (combatState: CombatState): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: getApiKey() });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("Veuillez configurer votre clé API dans le menu 'Clé API'.");
+  
+  const ai = new GoogleGenAI({ apiKey });
   const { weapon, bodyPart, result, target, style, mode, lootType, environmentType, atmosphere, interactiveObj, interactionAction, riddleDifficulty } = combatState;
   
   let lengthInstruction = "";
@@ -44,25 +52,21 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
 
   const systemInstruction = `Tu es un Maître du Donjon de Dark Fantasy expert. Tu écris en français. ${lengthInstruction}
   IMPORTANT : Pour tout objet ou loot, commence TOUJOURS ta réponse par "Nom : [Nom de l'objet]" sur la première ligne.
-  Si c'est un coffre ou une fouille, liste le trésor principal après un mot-clé "Contenu :".
-  N'hésite pas à être viscéral et sombre, c'est un jeu de rôle pour adultes.`;
+  N'hésite pas à être viscéral et sombre.`;
   
   let prompt = "";
-
   switch (mode) {
       case NarratorMode.INTERACTIVE:
           const objName = target.trim() ? target : interactiveObj;
-          if (interactionAction === InteractionAction.RIDDLE) {
-              prompt = `L'objet est : ${objName}. Propose une énigme (Difficulté : ${riddleDifficulty}). Format : Nom : [Nom], Description Visuelle, Énigme, Solution, Récompense : [Objet].`;
-          } else {
-              prompt = `Le joueur interagit avec : ${objName} (Action : ${interactionAction}). Format : Nom : [Nom], Description, Effet.`;
-          }
+          prompt = interactionAction === InteractionAction.RIDDLE 
+            ? `L'objet est : ${objName}. Propose une énigme (Difficulté : ${riddleDifficulty}).`
+            : `Le joueur interagit avec : ${objName} (Action : ${interactionAction}).`;
           break;
       case NarratorMode.WORLD:
-          prompt = `Décris le lieu : ${target || environmentType}. Ambiance : ${atmosphere}. Format : Nom : [Lieu], Description.`;
+          prompt = `Décris le lieu : ${target || environmentType}. Ambiance : ${atmosphere}.`;
           break;
       case NarratorMode.LOOT:
-          prompt = `Fouille de ${target || "cet endroit"}. Type d'objet : ${lootType}. Format : Nom : [Nom de l'objet], Description, Contenu : [Objet précis].`;
+          prompt = `Fouille de ${target || "cet endroit"}. Type d'objet : ${lootType}.`;
           break;
       case NarratorMode.COMBAT:
       default:
@@ -70,31 +74,22 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
           break;
   }
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview', 
-      contents: prompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.8,
-      }
-    });
-    
-    const text = response.text;
-    if (!text) throw new Error("Réponse vide de l'IA.");
-    return text;
-  } catch (error: any) {
-    console.error("Gemini Error:", error);
-    throw error;
-  }
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview', 
+    contents: prompt,
+    config: { systemInstruction, temperature: 0.8 }
+  });
+  
+  return response.text || "L'IA n'a pas pu générer de texte.";
 };
 
 export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const apiKey = getApiKey();
+    const ai = new GoogleGenAI({ apiKey });
     const cleanText = text.replace(/\*\*/g, '').replace(/\|/g, ', ');
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text: `Lis ceci d'une voix de vieux conteur mystérieux : ${cleanText}` }] }],
+        contents: [{ parts: [{ text: `Lis ceci : ${cleanText}` }] }],
         config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } },
@@ -107,21 +102,15 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
 };
 
 export const generateCharacterImage = async (prompt: string): Promise<string> => {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "1:1" } }
-        });
-        for (const candidate of response.candidates || []) {
-            for (const part of candidate.content.parts) {
-                if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
-        }
-        throw new Error("Img error.");
-    } catch (error: any) {
-        console.error("Img Gen Error:", error);
-        throw error;
+    const apiKey = getApiKey();
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: [{ text: prompt }] },
+        config: { imageConfig: { aspectRatio: "1:1" } }
+    });
+    for (const part of response.candidates?.[0]?.content.parts || []) {
+        if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     }
+    throw new Error("Img error.");
 };
