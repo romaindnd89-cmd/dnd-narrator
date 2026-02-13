@@ -1,26 +1,25 @@
 
 import React, { useState } from 'react';
 import { CharacterProfile } from '../types';
-import { Shield, Heart, Zap, Footprints, Clock, Image as ImageIcon, Printer, Skull, Sword, Sparkles, Coins, Scroll } from 'lucide-react';
+import { Shield, Heart, Zap, Image as ImageIcon, Printer, Skull, Sparkles, Coins, Scroll } from 'lucide-react';
 import { generateCharacterImage } from '../services/geminiService';
 
 interface CharacterSheetProps {
   profile: CharacterProfile;
-  apiKey: string;
 }
 
-const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
+const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile }) => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loadingImage, setLoadingImage] = useState(false);
 
   const handleGenerateImage = async () => {
     setLoadingImage(true);
     try {
-        const url = await generateCharacterImage(profile.visualPrompt, apiKey);
+        const url = await generateCharacterImage(profile.visualPrompt);
         setImageUrl(url);
     } catch (e) {
         console.error(e);
-        alert("Impossible de générer l'image. Vérifiez votre clé ou réessayez.");
+        alert("Impossible de générer l'image. Vérifiez votre connexion.");
     } finally {
         setLoadingImage(false);
     }
@@ -54,7 +53,8 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
     </div>
   );
 
-  const BoxTitle = ({ children }: { children: React.ReactNode }) => (
+  // Fix: children set as optional to avoid "Property 'children' is missing" errors in TS environments where the JSX parser is strict
+  const BoxTitle = ({ children }: { children?: React.ReactNode }) => (
       <h3 className="text-[10px] font-bold uppercase text-center bg-gray-200 border-t border-b border-gray-300 py-0.5 tracking-wider text-gray-600 mb-2 mt-auto">
           {children}
       </h3>
@@ -111,8 +111,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
       {/* --- MAIN GRID (3 COLUMNS) --- */}
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* === COL 1: STATS (Leftmost narrow column) === */}
-          {/* Sur mobile : Grille 3x2. Sur Desktop : Colonne verticale unique (lg:col-span-2) */}
           <div className="lg:col-span-2 flex flex-col gap-4">
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 lg:bg-transparent lg:border-none lg:p-0">
                   <div className="grid grid-cols-3 gap-4 lg:grid-cols-1 lg:gap-6 justify-items-center">
@@ -126,9 +124,7 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
               </div>
           </div>
 
-          {/* === COL 2: SKILLS & SAVES (Mid-Left column) === */}
           <div className="lg:col-span-3 flex flex-col gap-4">
-               {/* Inspiration & Proficiency */}
               <div className="flex gap-2">
                   <div className="flex-1 border-2 border-gray-800 rounded p-1 flex items-center justify-between px-2">
                       <div className="w-3 h-3 rounded-full border border-gray-800"></div>
@@ -140,7 +136,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   </div>
               </div>
 
-              {/* Saving Throws */}
               <div className="border border-gray-400 rounded p-2 bg-white flex flex-col">
                   <div className="space-y-1 mb-2">
                       {profile.savingThrows.map((save, i) => <SaveRow key={i} {...save} />)}
@@ -148,7 +143,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   <BoxTitle>Jets de Sauvegarde</BoxTitle>
               </div>
 
-              {/* Skills */}
               <div className="border border-gray-400 rounded p-2 bg-white flex-1 flex flex-col">
                   <div className="space-y-1 mb-2">
                       {profile.skills.map((skill, i) => <SkillRow key={i} {...skill} />)}
@@ -156,16 +150,13 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   <BoxTitle>Compétences</BoxTitle>
               </div>
 
-              {/* Passive Perception */}
               <div className="border-2 border-gray-300 rounded-full py-1 px-3 flex items-center gap-2 bg-white">
                   <span className="font-header text-lg font-bold">{profile.passivePerception}</span>
                   <span className="text-[9px] font-bold uppercase text-gray-500 leading-tight">Perception Passive (Sagesse)</span>
               </div>
           </div>
 
-          {/* === COL 3: COMBAT (Middle) === */}
           <div className="lg:col-span-4 flex flex-col gap-4">
-              {/* AC / Init / Speed */}
               <div className="grid grid-cols-3 gap-2 bg-gray-100 p-2 rounded-lg border border-gray-300">
                   <div className="flex flex-col items-center">
                       <div className="relative flex items-center justify-center w-14 h-14">
@@ -184,7 +175,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   </div>
               </div>
 
-              {/* HP Box */}
               <div className="border-2 border-gray-400 rounded-lg p-2 bg-white">
                   <div className="flex justify-between items-center text-[9px] text-gray-500 mb-1 px-1">
                       <span>PV Max: {profile.hpMax}</span>
@@ -200,7 +190,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                    <BoxTitle>Points de Vie Temporaires</BoxTitle>
                </div>
 
-              {/* HD & Death Saves */}
               <div className="grid grid-cols-2 gap-3">
                   <div className="border border-gray-400 rounded p-1 bg-white flex flex-col justify-end min-h-[60px]">
                       <span className="text-[9px] text-gray-500 block mb-1 text-center">Total: {profile.level}</span>
@@ -220,7 +209,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   </div>
               </div>
 
-              {/* Attacks & Spellcasting */}
               <div className="border border-gray-400 rounded p-2 bg-white flex-1 min-h-[200px] flex flex-col">
                    <div className="grid grid-cols-12 bg-gray-100 p-1 text-[8px] font-bold uppercase text-gray-600 mb-2 rounded">
                        <div className="col-span-5 pl-1">Nom</div>
@@ -242,7 +230,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                    <BoxTitle>Attaques et Incantations</BoxTitle>
               </div>
 
-              {/* Equipment */}
               <div className="border border-gray-400 rounded p-2 bg-white flex flex-col">
                    <div className="flex gap-2 mb-2">
                        <div className="w-12 flex flex-col items-center justify-center border border-gray-200 rounded bg-gray-50 p-1 shrink-0">
@@ -259,10 +246,7 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
               </div>
           </div>
 
-          {/* === COL 4: FEATURES & TRAITS (Rightmost) === */}
           <div className="lg:col-span-3 flex flex-col gap-4">
-              
-              {/* Roleplay Boxes */}
               <div className="bg-gray-100 p-2 rounded-t-lg border-2 border-gray-800 border-b-0 space-y-2">
                   <div className="bg-white p-2 border border-gray-300 rounded shadow-sm">
                       <p className="text-[10px] italic min-h-[30px] line-clamp-3 hover:line-clamp-none">{profile.personalityTraits}</p>
@@ -282,7 +266,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   </div>
               </div>
 
-              {/* Features & Traits (Detailed) */}
               <div className="border-2 border-gray-800 rounded-b-lg p-2 bg-white flex-1 min-h-[400px] flex flex-col">
                   <div className="space-y-3 h-full mb-2">
                       {profile.featuresAndTraits.map((feat, i) => (
@@ -299,7 +282,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   <BoxTitle>Capacités et Traits</BoxTitle>
               </div>
 
-               {/* Proficiencies & Languages (Moved here for better space usage) */}
                <div className="border border-gray-400 rounded p-2 bg-white flex flex-col">
                   <ul className="text-[10px] list-disc list-inside space-y-0.5 mb-2">
                       {profile.otherProficiencies.map((p, i) => <li key={i}>{p}</li>)}
@@ -314,7 +296,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
           <h2 className="text-center font-header text-2xl uppercase tracking-widest mb-6 text-gray-400">Description & Histoire</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Visuals */}
               <div className="flex flex-col gap-4">
                   <div className="border-4 border-double border-gray-800 rounded-lg h-[400px] bg-gray-50 flex items-center justify-center overflow-hidden relative group shadow-inner">
                         {imageUrl ? (
@@ -335,7 +316,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                         )}
                   </div>
                   
-                  {/* Physical Details */}
                   <div className="bg-white border border-gray-300 rounded p-4 grid grid-cols-2 gap-4 text-xs">
                        <div><span className="font-bold block text-gray-500 uppercase text-[9px]">Âge</span> {profile.age}</div>
                        <div><span className="font-bold block text-gray-500 uppercase text-[9px]">Taille</span> {profile.height}</div>
@@ -346,7 +326,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
                   </div>
               </div>
 
-              {/* Backstory (Novel Style) */}
               <div className="border border-gray-400 rounded p-6 bg-white shadow-sm relative">
                    <Scroll className="w-8 h-8 text-gray-200 absolute top-4 right-4" />
                    <h3 className="font-header text-xl font-bold mb-4 border-b border-gray-200 pb-2">L'Histoire du Personnage</h3>
@@ -360,7 +339,6 @@ const CharacterSheet: React.FC<CharacterSheetProps> = ({ profile, apiKey }) => {
           </div>
       </div>
 
-      {/* --- PRINT FOOTER --- */}
       <div className="relative z-10 mt-8 pt-4 border-t border-gray-200 flex justify-between items-center print:hidden">
             <span className="text-xs text-gray-400 flex items-center gap-2">
                 <Skull className="w-4 h-4" /> Généré par D&D Action Narrator

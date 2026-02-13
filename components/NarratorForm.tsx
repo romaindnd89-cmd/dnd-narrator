@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType, EnvironmentType, WorldAtmosphere, InteractiveObjectType, InteractionAction } from '../types';
-import { Sword, Skull, Target, Sparkles, Map, BookOpen, Search, Gem, Archive, Dices, ZapOff, Globe, User, Box, HandMetal } from 'lucide-react';
+import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType, EnvironmentType, WorldAtmosphere, InteractiveObjectType, InteractionAction, RiddleDifficulty } from '../types';
+import { Sword, Skull, Target, Sparkles, Map, BookOpen, Search, Gem, Archive, Dices, ZapOff, Globe, User, Box, HandMetal, Brain } from 'lucide-react';
 
 interface NarratorFormProps {
   combatState: CombatState;
@@ -61,6 +61,10 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
 
   const handleInteractionActionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({ ...combatState, interactionAction: e.target.value as InteractionAction });
+  };
+
+  const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ ...combatState, riddleDifficulty: e.target.value as RiddleDifficulty });
   };
 
   const currentMode = combatState.mode;
@@ -264,6 +268,30 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {/* --- DIFFICULTY SELECTOR (Visible only if Riddle) --- */}
+                {combatState.interactionAction === InteractionAction.RIDDLE && (
+                    <div className="space-y-2 animate-fade-in">
+                        <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
+                            <Brain className="w-5 h-5 text-blood-red" />
+                            Difficulté de l'Énigme
+                        </label>
+                        <div className="relative">
+                            <select
+                            value={combatState.riddleDifficulty}
+                            onChange={handleDifficultyChange}
+                            className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                            >
+                            {Object.values(RiddleDifficulty).map((diff) => (
+                                <option key={diff} value={diff}>{diff}</option>
+                            ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
+                            ▼
+                            </div>
+                        </div>
+                    </div>
+                )}
             </>
         )}
 
