@@ -1,4 +1,5 @@
 
+
 export enum NarrationStyle {
   SIMPLE = 'Simple (Rapide)',
   MEDIUM = 'Semi-détaillée (Équilibrée)',
@@ -48,7 +49,7 @@ export enum EnvironmentType {
   DUNGEON = 'Donjon / Crypte',
   CASTLE = 'Château / Fort',
   MANOR = 'Manoir / Demeure',
-  FOREST = 'Forêt / Bois',
+  FOREST = 'Foit / Bois',
   CAVE = 'Grotte / Caverne',
   TAVERN = 'Taverne / Auberge',
   CITY = 'Ville / Ruelle',
@@ -126,12 +127,21 @@ export interface Currency {
   gold: number;
 }
 
+export interface PlayerCondition {
+  id: string;
+  name: string;
+  description: string;
+  isPenalty?: boolean;
+  timestamp: number;
+}
+
 export interface VaultItem {
   id: string;
   name: string;
   description: string;
   quantity: number;
   imageUrl?: string;
+  isPenalty?: boolean;
   timestamp: number;
 }
 
@@ -140,6 +150,7 @@ export interface Player {
   name: string;
   currency: Currency;
   inventory: VaultItem[];
+  conditions: PlayerCondition[];
 }
 
 export interface SessionState {
@@ -150,8 +161,51 @@ export interface SessionState {
 }
 
 // --- CHARACTER SHEET TYPES ---
+export interface AbilityStats {
+  str: number;
+  dex: number;
+  con: number;
+  int: number;
+  wis: number;
+  cha: number;
+}
+
+export interface AbilityModifiers {
+  str: string;
+  dex: string;
+  con: string;
+  int: string;
+  wis: string;
+  cha: string;
+}
+
+export interface SavingThrow {
+  name: string;
+  mod: string;
+  proficient: boolean;
+}
+
+export interface Skill {
+  name: string;
+  mod: string;
+  proficient: boolean;
+  stat: string;
+}
+
+export interface Attack {
+  name: string;
+  bonus: string;
+  damage: string;
+}
+
+export interface FeatureTrait {
+  name: string;
+  description: string;
+}
+
 export interface CharacterProfile {
   name: string;
+  visualPrompt: string;
   class: string;
   subclass: string;
   level: number;
@@ -160,42 +214,27 @@ export interface CharacterProfile {
   race: string;
   alignment: string;
   xp: string;
-  stats: {
-    str: number;
-    dex: number;
-    con: number;
-    int: number;
-    wis: number;
-    cha: number;
-  };
-  modifiers: {
-    str: string;
-    dex: string;
-    con: string;
-    int: string;
-    wis: string;
-    cha: string;
-  };
+  stats: AbilityStats;
+  modifiers: AbilityModifiers;
   proficiencyBonus: string;
-  savingThrows: { name: string; mod: string; proficient: boolean }[];
-  skills: { name: string; mod: string; proficient: boolean; stat: string }[];
+  savingThrows: SavingThrow[];
+  skills: Skill[];
   passivePerception: number;
   ac: number;
-  initiative: number;
+  initiative: string;
   speed: string;
   hpMax: number;
   hpCurrent: number;
   hitDice: string;
-  attacks: { name: string; bonus: string; damage: string }[];
+  attacks: Attack[];
   treasure: string;
   equipment: string[];
   personalityTraits: string;
   ideals: string;
   bonds: string;
   flaws: string;
-  featuresAndTraits: { name: string; description: string }[];
+  featuresAndTraits: FeatureTrait[];
   otherProficiencies: string[];
-  visualPrompt: string;
   age: string;
   height: string;
   weight: string;
