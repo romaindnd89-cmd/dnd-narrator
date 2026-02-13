@@ -31,6 +31,15 @@ async function decodeAudioData(
   return buffer;
 }
 
+// Configuration des filtres de sécurité pour autoriser le contenu créatif de combat JdR
+const safetySettings = [
+  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_CIVIC_INTEGRITY', threshold: 'BLOCK_NONE' },
+];
+
 export const generateNarration = async (combatState: CombatState): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   const { weapon, bodyPart, result, target, style, mode, lootType, environmentType, atmosphere, interactiveObj, interactionAction, riddleDifficulty } = combatState;
@@ -40,10 +49,10 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
   if (style === NarrationStyle.MEDIUM) lengthInstruction = "Un paragraphe détaillé.";
   if (style === NarrationStyle.IMMERSIVE) lengthInstruction = "Narration très riche, sensorielle et atmosphérique.";
 
-  // CRITICAL: Force keywords for the UI parser
   const systemInstruction = `Tu es un Maître du Donjon de Dark Fantasy expert. Tu écris en français. ${lengthInstruction}
   IMPORTANT : Pour tout objet ou loot, commence TOUJOURS ta réponse par "Nom : [Nom de l'objet]" sur la première ligne.
-  Si c'est un coffre ou une fouille, liste le trésor principal après un mot-clé "Contenu :".`;
+  Si c'est un coffre ou une fouille, liste le trésor principal après un mot-clé "Contenu :".
+  N'hésite pas à être viscéral et sombre, c'est un jeu de rôle pour adultes.`;
   
   let prompt = "";
 
@@ -74,10 +83,16 @@ export const generateNarration = async (combatState: CombatState): Promise<strin
       contents: prompt,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.8
+        temperature: 0.8,
+        safetySettings: safetySettings
       }
     });
-    return response.text || "La brume engloutit vos paroles...";
+    
+    if (!response.text) {
+        throw new Error("L'IA a bloqué la réponse pour des raisons de sécurité.");
+    }
+    
+    return response.text;
   } catch (error: any) {
     console.error("Gemini Error:", error);
     throw error;
@@ -93,6 +108,7 @@ export const generateSpeech = async (text: string): Promise<AudioBuffer> => {
         config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Charon' } } },
+            safetySettings: safetySettings
         },
     });
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -107,7 +123,10 @@ export const generateCharacterImage = async (prompt: string): Promise<string> =>
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: prompt }] },
-            config: { imageConfig: { aspectRatio: "1:1" } }
+            config: { 
+                imageConfig: { aspectRatio: "1:1" },
+                safetySettings: safetySettings
+            }
         });
         for (const part of response.candidates?.[0]?.content?.parts || []) {
             if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
