@@ -118,7 +118,13 @@ const App: React.FC = () => {
           if (storyEl) storyEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     } catch (err: any) {
-      setError(<span className="text-red-400">Une erreur magique est survenue dans le donjon.</span>);
+      const msg = err.message || "Erreur inconnue";
+      setError(
+        <div className="flex flex-col items-center gap-2">
+            <span className="text-red-400">Une erreur magique est survenue dans le donjon.</span>
+            <span className="text-[10px] text-gray-600 uppercase tracking-widest italic">{msg}</span>
+        </div>
+      );
     } finally {
       setIsLoading(false);
     }
