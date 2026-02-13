@@ -130,6 +130,7 @@ export interface VaultItem {
   id: string;
   name: string;
   description: string;
+  quantity: number;
   imageUrl?: string;
   timestamp: number;
 }
