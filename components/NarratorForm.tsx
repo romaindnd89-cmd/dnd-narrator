@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { WeaponType, DiceResult, BodyPart, CombatState, NarrationStyle, NarratorMode, LootType, EnvironmentType, WorldAtmosphere, InteractiveObjectType, InteractionAction, RiddleDifficulty } from '../types';
-import { Sword, Skull, Target, Sparkles, Map, BookOpen, Search, Gem, Archive, Dices, ZapOff, Globe, User, Box, HandMetal, Brain } from 'lucide-react';
+import { Sword, Skull, Target, Sparkles, Map, BookOpen, Search, Gem, Archive, Dices, ZapOff, Globe, User, Box, HandMetal, Brain, ChevronDown } from 'lucide-react';
 
 interface NarratorFormProps {
   combatState: CombatState;
@@ -79,397 +79,277 @@ const NarratorForm: React.FC<NarratorFormProps> = ({
     { label: 'd100', sides: 100, color: 'from-gray-800 to-gray-600' },
   ];
 
+  const modes = [
+    { mode: NarratorMode.COMBAT, icon: Sword, label: 'Combat' },
+    { mode: NarratorMode.WORLD, icon: Globe, label: 'Monde' },
+    { mode: NarratorMode.INTERACTIVE, icon: Box, label: 'Objet' },
+    { mode: NarratorMode.LOOT, icon: Search, label: 'Fouille' },
+    { mode: NarratorMode.DICE, icon: Dices, label: 'Dés' }
+  ];
+
   return (
-    <div className="bg-darker-metal border-2 border-gold-dark/30 rounded-lg shadow-2xl relative overflow-hidden group h-full">
-        {/* Decorative corner accents */}
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-gold-antique pointer-events-none z-20"></div>
-        <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-gold-antique pointer-events-none z-20"></div>
-        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-gold-antique pointer-events-none z-20"></div>
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-gold-antique pointer-events-none z-20"></div>
+    <div className="bg-darker-metal border-2 border-gold-dark/30 rounded-lg shadow-2xl relative overflow-hidden flex flex-col h-full no-scrollbar">
+      
+      {/* Navigation HORIZONTALE avec ICONES + NOMS */}
+      <nav className="flex flex-row border-b border-gold-dark/30 shrink-0 bg-black/40 overflow-x-auto no-scrollbar">
+        {modes.map((tab) => (
+          <button
+            key={tab.mode}
+            onClick={() => handleModeChange(tab.mode)}
+            className={`flex-1 min-w-[65px] py-3 flex flex-col items-center justify-center gap-1 transition-all
+              ${currentMode === tab.mode 
+                ? 'bg-blood-dark/30 text-gold-antique shadow-[inset_0_-3px_0_#c5a059]' 
+                : 'text-gray-500 hover:text-gray-400 hover:bg-white/5'}
+            `}
+          >
+            <tab.icon className={`w-4 h-4 ${currentMode === tab.mode ? 'text-gold-antique' : 'text-gray-600'}`} />
+            <span className="text-[7px] font-header uppercase tracking-tighter leading-none">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
 
-      {/* Tabs for Mode Selection */}
-      <div className="flex border-b border-gold-dark/30 overflow-x-auto no-scrollbar">
-        <button
-            onClick={() => handleModeChange(NarratorMode.COMBAT)}
-            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
-                ${currentMode === NarratorMode.COMBAT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-            `}
-        >
-            <Sword className="w-4 h-4 md:w-5 md:h-5" /> Combat
-        </button>
-        <button
-            onClick={() => handleModeChange(NarratorMode.WORLD)}
-            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
-                ${currentMode === NarratorMode.WORLD ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-            `}
-        >
-            <Globe className="w-4 h-4 md:w-5 md:h-5" /> Monde
-        </button>
-        <button
-            onClick={() => handleModeChange(NarratorMode.INTERACTIVE)}
-            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
-                ${currentMode === NarratorMode.INTERACTIVE ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-            `}
-        >
-            <Box className="w-4 h-4 md:w-5 md:h-5" /> Objet
-        </button>
-        <button
-            onClick={() => handleModeChange(NarratorMode.LOOT)}
-            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
-                ${currentMode === NarratorMode.LOOT ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-            `}
-        >
-            <Search className="w-4 h-4 md:w-5 md:h-5" /> Fouille
-        </button>
-        <button
-            onClick={() => handleModeChange(NarratorMode.DICE)}
-            className={`flex-1 min-w-[70px] py-4 text-center font-header text-[10px] md:text-sm uppercase tracking-wider transition-colors flex flex-col md:flex-row items-center justify-center gap-2
-                ${currentMode === NarratorMode.DICE ? 'bg-blood-dark/20 text-gold-antique shadow-[inset_0_-2px_0_#c5a059]' : 'bg-darker-metal text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-            `}
-        >
-            <Dices className="w-4 h-4 md:w-5 md:h-5" /> Dés
-        </button>
-      </div>
-
-      <div className="p-6 md:p-8 space-y-6 relative z-10 overflow-y-auto max-h-[calc(100vh-350px)] lg:max-h-none custom-scrollbar">
+      {/* Contenu du Formulaire - Superposition Verticale Strict */}
+      <div className="flex-1 overflow-y-auto no-scrollbar p-3 space-y-4 relative z-10 flex flex-col">
 
         {currentMode !== NarratorMode.DICE && (
-            <div className="space-y-2">
-                <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                    <BookOpen className="w-5 h-5 text-blood-red" />
-                    Détail de la description
+            <div className="space-y-1.5 animate-fade-in">
+                <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                    <BookOpen className="w-3 h-3 text-blood-red" /> Style Narration
                 </label>
                 <div className="relative">
-                    <select
+                  <select
                     value={combatState.style}
                     onChange={handleStyleChange}
-                    className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                    >
+                    className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none cursor-pointer focus:border-gold-antique transition-colors"
+                  >
                     {Object.values(NarrationStyle).map((style) => (
                         <option key={style} value={style}>{style}</option>
                     ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                    ▼
-                    </div>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gold-dark pointer-events-none" />
                 </div>
             </div>
         )}
         
-        {/* === COMBAT INPUTS === */}
+        {/* === COMBAT INPUTS (VERTICAL) === */}
         {currentMode === NarratorMode.COMBAT && (
-            <>
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <Sword className="w-5 h-5 text-blood-red" />
-                        L'Arme
+            <div className="space-y-4 animate-fade-in">
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <Sword className="w-3 h-3 text-blood-red" /> L'Arme
                     </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.weapon}
-                        onChange={handleWeaponChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(WeaponType).map((weapon) => (
-                            <option key={weapon} value={weapon}>{weapon}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <User className="w-5 h-5 text-blood-red" />
-                        Zone visée <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
-                    </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.bodyPart}
-                        onChange={handleBodyPartChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(BodyPart).map((part) => (
-                            <option key={part} value={part}>{part}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <Skull className="w-5 h-5 text-blood-red" />
-                        Le Résultat du Dé
-                    </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.result}
-                        onChange={handleResultChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(DiceResult).map((result) => (
-                            <option key={result} value={result}>{result}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
-                </div>
-            </>
-        )}
-
-        {/* === INTERACTIVE OBJECTS INPUTS === */}
-        {currentMode === NarratorMode.INTERACTIVE && (
-            <>
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <Box className="w-5 h-5 text-blood-red" />
-                        Type d'Objet
-                    </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.interactiveObj}
-                        onChange={handleInteractiveObjChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(InteractiveObjectType).map((obj) => (
-                            <option key={obj} value={obj}>{obj}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
-                </div>
-
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <HandMetal className="w-5 h-5 text-blood-red" />
-                        Type d'Action / Interaction
-                    </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.interactionAction}
-                        onChange={handleInteractionActionChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(InteractionAction).map((action) => (
-                            <option key={action} value={action}>{action}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
-                </div>
-
-                {/* --- DIFFICULTY SELECTOR (Visible only if Riddle) --- */}
-                {combatState.interactionAction === InteractionAction.RIDDLE && (
-                    <div className="space-y-2 animate-fade-in">
-                        <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                            <Brain className="w-5 h-5 text-blood-red" />
-                            Difficulté de l'Énigme
-                        </label>
-                        <div className="relative">
-                            <select
-                            value={combatState.riddleDifficulty}
-                            onChange={handleDifficultyChange}
-                            className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                            >
-                            {Object.values(RiddleDifficulty).map((diff) => (
-                                <option key={diff} value={diff}>{diff}</option>
-                            ))}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                            ▼
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </>
-        )}
-
-        {/* === LOOT INPUTS === */}
-        {currentMode === NarratorMode.LOOT && (
-            <div className="space-y-2 animate-fade-in">
-                <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                    <Gem className="w-5 h-5 text-blood-red" />
-                    Type d'objet
-                </label>
-                <div className="relative">
                     <select
-                    value={combatState.lootType}
-                    onChange={handleLootTypeChange}
-                    className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
+                      value={combatState.weapon}
+                      onChange={handleWeaponChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
                     >
-                    {Object.values(LootType).map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                    ))}
+                      {Object.values(WeaponType).map((weapon) => (
+                          <option key={weapon} value={weapon}>{weapon}</option>
+                      ))}
                     </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                    ▼
-                    </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <User className="w-3 h-3 text-blood-red" /> Zone Visée
+                    </label>
+                    <select
+                      value={combatState.bodyPart}
+                      onChange={handleBodyPartChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(BodyPart).map((part) => (
+                          <option key={part} value={part}>{part}</option>
+                      ))}
+                    </select>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <Skull className="w-3 h-3 text-blood-red" /> Résultat Dé
+                    </label>
+                    <select
+                      value={combatState.result}
+                      onChange={handleResultChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(DiceResult).map((result) => (
+                          <option key={result} value={result}>{result}</option>
+                      ))}
+                    </select>
                 </div>
             </div>
         )}
 
-        {/* === WORLD INPUTS === */}
-        {currentMode === NarratorMode.WORLD && (
-            <>
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <Map className="w-5 h-5 text-blood-red" />
-                        Type d'Environnement
+        {/* === INTERACTIVE OBJECTS (VERTICAL) === */}
+        {currentMode === NarratorMode.INTERACTIVE && (
+            <div className="space-y-4 animate-fade-in">
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <Box className="w-3 h-3 text-blood-red" /> Objet
                     </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.environmentType}
-                        onChange={handleEnvironmentChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(EnvironmentType).map((env) => (
-                            <option key={env} value={env}>{env}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
+                    <select
+                      value={combatState.interactiveObj}
+                      onChange={handleInteractiveObjChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(InteractiveObjectType).map((obj) => (
+                          <option key={obj} value={obj}>{obj}</option>
+                      ))}
+                    </select>
                 </div>
 
-                <div className="space-y-2 animate-fade-in">
-                    <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                        <Globe className="w-5 h-5 text-blood-red" />
-                        Ambiance / Style
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <HandMetal className="w-3 h-3 text-blood-red" /> Action
                     </label>
-                    <div className="relative">
-                        <select
-                        value={combatState.atmosphere}
-                        onChange={handleAtmosphereChange}
-                        className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none appearance-none cursor-pointer hover:bg-black transition-colors"
-                        >
-                        {Object.values(WorldAtmosphere).map((atm) => (
-                            <option key={atm} value={atm}>{atm}</option>
-                        ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gold-dark">
-                        ▼
-                        </div>
-                    </div>
+                    <select
+                      value={combatState.interactionAction}
+                      onChange={handleInteractionActionChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(InteractionAction).map((action) => (
+                          <option key={action} value={action}>{action}</option>
+                      ))}
+                    </select>
                 </div>
-            </>
+
+                {combatState.interactionAction === InteractionAction.RIDDLE && (
+                    <div className="space-y-1.5">
+                        <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                            <Brain className="w-3 h-3 text-blood-red" /> Difficulté
+                        </label>
+                        <select
+                          value={combatState.riddleDifficulty}
+                          onChange={handleDifficultyChange}
+                          className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                        >
+                          {Object.values(RiddleDifficulty).map((diff) => (
+                              <option key={diff} value={diff}>{diff}</option>
+                          ))}
+                        </select>
+                    </div>
+                )}
+            </div>
         )}
 
-        {/* === DICE INPUTS === */}
+        {/* === LOOT / WORLD (VERTICAL) === */}
+        {currentMode === NarratorMode.LOOT && (
+            <div className="space-y-1.5 animate-fade-in">
+                <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                    <Gem className="w-3 h-3 text-blood-red" /> Type de Butin
+                </label>
+                <select
+                  value={combatState.lootType}
+                  onChange={handleLootTypeChange}
+                  className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                >
+                  {Object.values(LootType).map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+            </div>
+        )}
+
+        {currentMode === NarratorMode.WORLD && (
+            <div className="space-y-4 animate-fade-in">
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <Map className="w-3 h-3 text-blood-red" /> Lieu Exploré
+                    </label>
+                    <select
+                      value={combatState.environmentType}
+                      onChange={handleEnvironmentChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(EnvironmentType).map((env) => (
+                          <option key={env} value={env}>{env}</option>
+                      ))}
+                    </select>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                        <Globe className="w-3 h-3 text-blood-red" /> Ambiance
+                    </label>
+                    <select
+                      value={combatState.atmosphere}
+                      onChange={handleAtmosphereChange}
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none appearance-none"
+                    >
+                      {Object.values(WorldAtmosphere).map((atm) => (
+                          <option key={atm} value={atm}>{atm}</option>
+                      ))}
+                    </select>
+                </div>
+            </div>
+        )}
+
+        {/* === DICE (Grid compacte) === */}
         {currentMode === NarratorMode.DICE && (
-            <div className="space-y-6 animate-fade-in">
-                 <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-gold-antique font-header uppercase tracking-widest text-sm flex items-center gap-2">
-                        <Dices className="w-4 h-4" /> Vos Dés de Destinée
-                    </h3>
-                    <div className="px-2 py-0.5 rounded bg-green-900/30 border border-green-500/30 flex items-center gap-1.5 shadow-sm">
-                        <ZapOff className="w-3 h-3 text-green-500" />
-                        <span className="text-[10px] text-green-400 font-bold uppercase tracking-wider">Calcul Local (Sans API)</span>
-                    </div>
-                 </div>
-                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="space-y-4 animate-fade-in flex-grow flex flex-col justify-center">
+                 <div className="grid grid-cols-3 gap-2">
                     {diceTypes.map((dice) => (
                         <button
                             key={dice.sides}
                             onClick={() => onDiceRoll(dice.sides)}
                             className={`
-                                group/dice relative py-6 rounded-lg border border-gold-dark/20 
-                                bg-gradient-to-br ${dice.color} shadow-lg overflow-hidden
-                                transition-all hover:scale-105 active:scale-95
+                                group/dice relative py-3 rounded border border-gold-dark/20 
+                                bg-gradient-to-br ${dice.color} shadow-lg transition-all active:scale-95 flex items-center justify-center
                             `}
                         >
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/dice:opacity-100 transition-opacity"></div>
-                            <span className="relative z-10 font-header text-2xl text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]">
+                            <span className="relative z-10 font-header text-[9px] text-white drop-shadow-md">
                                 {dice.label}
                             </span>
-                            <div className="absolute bottom-1 right-2 opacity-20 group-hover/dice:opacity-40 transition-opacity">
-                                <Dices className="w-8 h-8 text-white" />
-                            </div>
                         </button>
                     ))}
                  </div>
-                 <div className="p-4 bg-black/40 border border-gold-dark/10 rounded italic text-sm text-gray-500 font-body text-center">
-                    Cliquez sur un dé pour le lancer. Le résultat s'affichera sur le parchemin.
-                 </div>
             </div>
         )}
 
-        {/* Target/Name Input (Shared but different placeholder) */}
         {currentMode !== NarratorMode.DICE && (
-            <div className="space-y-2 animate-fade-in">
-            <label className="flex items-center gap-2 text-gold-antique font-header text-lg uppercase tracking-wider">
-                {currentMode === NarratorMode.COMBAT ? <Target className="w-5 h-5 text-blood-red" /> : 
-                 currentMode === NarratorMode.WORLD ? <Map className="w-5 h-5 text-blood-red" /> : 
-                 currentMode === NarratorMode.INTERACTIVE ? <Box className="w-5 h-5 text-blood-red" /> :
-                 <Archive className="w-5 h-5 text-blood-red" />}
-                
-                {currentMode === NarratorMode.COMBAT ? 'Cible / Monstre' : 
-                 currentMode === NarratorMode.WORLD ? 'Nom du Lieu' : 
-                 currentMode === NarratorMode.INTERACTIVE ? "Objet Spécifique" :
-                 'Lieu de fouille'} 
-                 <span className="text-xs text-gray-500 normal-case ml-auto opacity-70">(Optionnel)</span>
-            </label>
-            <input
-                type="text"
-                value={combatState.target}
-                onChange={handleTargetChange}
-                placeholder={
-                    currentMode === NarratorMode.COMBAT ? "Ex: Gobelin, Dragon Rouge..." : 
-                    currentMode === NarratorMode.WORLD ? "Ex: Le Bastion des Ombres..." : 
-                    currentMode === NarratorMode.INTERACTIVE ? "Ex: Coffre maudit, Levier rouillé..." :
-                    "Ex: Cadavre de bandit, Coffre pourri..."
-                }
-                className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/50 rounded p-3 focus:border-gold-antique focus:ring-1 focus:ring-gold-antique outline-none placeholder-gray-600"
-            />
-            </div>
-        )}
+            <>
+                <div className="space-y-1.5 animate-fade-in">
+                  <label className="flex items-center gap-2 text-gold-antique font-header text-[8px] uppercase tracking-widest">
+                      <Target className="w-3 h-3 text-blood-red" /> Nom Précis
+                  </label>
+                  <input
+                      type="text"
+                      value={combatState.target}
+                      onChange={handleTargetChange}
+                      placeholder="Ex: Gobelin, Crypte..."
+                      className="w-full bg-dark-metal text-parchment font-body border border-gold-dark/30 rounded px-3 py-2 text-[11px] outline-none placeholder-gray-700 focus:border-gold-antique transition-colors"
+                  />
+                </div>
 
-        {/* Submit Button (Only for Combat/Loot/World/Interactive) */}
-        {currentMode !== NarratorMode.DICE && (
-            <div>
-                <button
-                onClick={onSubmit}
-                disabled={isLoading}
-                className={`
-                    w-full relative overflow-hidden group/btn
-                    mt-4 py-4 px-6 rounded border border-gold-dark
-                    font-header text-xl uppercase tracking-widest font-bold
-                    transition-all duration-300
-                    ${isLoading 
-                    ? 'bg-gray-900 cursor-not-allowed text-gray-500 border-gray-700' 
-                    : 'bg-blood-dark hover:bg-blood-red text-gold-antique shadow-glow-red hover:shadow-glow-gold hover:-translate-y-0.5'
-                    }
-                `}
-                >
-                    <span className="relative z-10 flex items-center justify-center gap-3">
-                        {isLoading ? (
-                            <>
-                                <span className="animate-spin text-2xl">⟳</span> Invocation...
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-5 h-5" /> 
-                                {currentMode === NarratorMode.COMBAT ? 'Générer la Narration' : 
-                                 currentMode === NarratorMode.WORLD ? 'Décrire le Monde' : 
-                                 currentMode === NarratorMode.INTERACTIVE ? 'Interagir avec l\'Objet' :
-                                 'Générer l\'Objet'}
-                            </>
-                        )}
-                    </span>
-                    {!isLoading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-700 ease-in-out"></div>}
-                </button>
-            </div>
+                <div className="pt-2 shrink-0">
+                    <button
+                    onClick={onSubmit}
+                    disabled={isLoading}
+                    className={`
+                        w-full py-3 rounded border border-gold-dark/50
+                        font-header text-[10px] uppercase tracking-[0.2em] font-bold
+                        transition-all flex items-center justify-center gap-2
+                        ${isLoading 
+                        ? 'bg-gray-900 cursor-not-allowed text-gray-500' 
+                        : 'bg-blood-dark hover:bg-blood-red text-gold-antique shadow-glow-red active:scale-[0.98]'
+                        }
+                    `}
+                    >
+                    {isLoading ? (
+                        <>
+                            <div className="w-3 h-3 border-2 border-gold-antique/20 border-t-gold-antique rounded-full animate-spin"></div>
+                            Invocation...
+                        </>
+                    ) : (
+                        <>
+                            <Sparkles className="w-3 h-3" />
+                            Lancer Action
+                        </>
+                    )}
+                    </button>
+                </div>
+            </>
         )}
 
       </div>

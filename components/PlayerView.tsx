@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { SessionState } from '../types';
-import { Box, Coins, User, Shield, RefreshCw, Sparkles, Clock, CloudLightning, Wifi, WifiOff, Loader2, AlertCircle } from 'lucide-react';
+import { Box, User, Shield, Wifi, WifiOff, Loader2, AlertCircle, Zap } from 'lucide-react';
 import { initSupabase, subscribeToSession, getSessionFromCloud } from '../services/supabaseService';
 
-// Helper pour le décodage Base64 compatible UTF-8
 const atou = (str: string) => {
     try {
         return decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
@@ -140,19 +139,25 @@ const PlayerView: React.FC<PlayerViewProps> = ({ data }) => {
                         <Box className="w-3.5 h-3.5" /> Sac de l'aventurier
                     </h4>
                     {player.inventory.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="grid grid-cols-1 gap-4">
                             {player.inventory.map(item => (
-                                <div key={item.id} className="bg-white/5 border border-white/5 rounded-xl p-3 flex gap-4 items-center animate-fade-in group">
-                                    <div className="w-14 h-14 rounded-lg bg-black/60 flex items-center justify-center shrink-0 border border-gold-dark/20 overflow-hidden shadow-lg">
+                                <div key={item.id} className="bg-white/5 border border-white/5 rounded-xl p-4 flex gap-4 items-start animate-fade-in group shadow-lg">
+                                    <div className="w-16 h-16 rounded-lg bg-black/60 flex items-center justify-center shrink-0 border border-gold-dark/20 overflow-hidden shadow-lg mt-1">
                                         {item.imageUrl ? (
                                             <img src={item.imageUrl} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={item.name} />
                                         ) : (
-                                            <Box className="w-6 h-6 text-gray-700" />
+                                            <Box className="w-8 h-8 text-gray-700" />
                                         )}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-header text-sm text-gold-antique uppercase truncate leading-tight mb-1">{item.name}</p>
-                                        <p className="text-[10px] text-parchment/40 line-clamp-2 italic font-body">{item.description}</p>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="font-header text-md text-gold-antique uppercase truncate leading-tight tracking-wider">{item.name}</p>
+                                            <span className="text-[10px] font-header text-gold-antique bg-gold-dark/20 px-2 rounded-full border border-gold-dark/30">x{item.quantity}</span>
+                                        </div>
+                                        <div className="flex items-start gap-2 bg-black/30 p-2 rounded border border-white/5">
+                                            <Zap className="w-3 h-3 text-gold-antique shrink-0 mt-0.5 opacity-50" />
+                                            <p className="text-[10px] text-parchment/80 italic font-body leading-relaxed">{item.description}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

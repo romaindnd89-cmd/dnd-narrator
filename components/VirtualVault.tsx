@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Player, SessionState, Currency } from '../types';
-import { Users, UserPlus, Trash2, Coins, Briefcase, Minus, Share2, ShieldX, User, Box, QrCode, Info, AlertTriangle, Sparkles, X, Copy, CheckCircle2, CloudLightning, Settings, ShieldCheck, Database, Globe, ExternalLink, Terminal, HelpCircle, Share } from 'lucide-react';
+import { Player, SessionState, Currency, VaultItem } from '../types';
+import { Users, UserPlus, Trash2, Briefcase, Minus, ShieldX, User, Box, QrCode, CloudLightning, Sparkles, X, PlusCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { initSupabase, saveSessionToCloud } from '../services/supabaseService';
+import { generateCharacterImage } from '../services/geminiService';
 
-// Helper pour le décodage/encodage compatible UTF-8
 const utoa = (str: string) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))));
 
 interface VirtualVaultProps {
@@ -17,9 +17,14 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
   const [newPlayerName, setNewPlayerName] = useState('');
   const [showShare, setShowShare] = useState(false);
   const [showCloudConfig, setShowCloudConfig] = useState(false);
-  const [showSqlGuide, setShowSqlGuide] = useState(false);
-  const [showInGameHelp, setShowInGameHelp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [dmLinkCopied, setDmLinkCopied] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  const [addingToPlayerId, setAddingToPlayerId] = useState<string | null>(null);
+  const [manualItemName, setManualItemName] = useState('');
+  const [manualItemQty, setManualItemQty] = useState(1);
+  const [isGeneratingImg, setIsGeneratingImg] = useState(false);
 
   const [cloudUrl, setCloudUrl] = useState(() => localStorage.getItem('dnd_supabase_url') || '');
   const [cloudKey, setCloudKey] = useState(() => localStorage.getItem('dnd_supabase_key') || '');
@@ -43,64 +48,67 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
     }
   };
 
-  const generateShareLink = () => {
+  const handleGenerateDMLink = async () => {
+    if (!cloudUrl || !cloudKey) return;
     const baseUrl = window.location.origin + window.location.pathname;
-    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-    
-    let dataToEncode;
-    if (isCloudEnabled) {
-        dataToEncode = {
-            id: session.id,
-            isLiveOnly: true, 
-            cloudConfig: { url: cloudUrl, key: cloudKey }
-        };
-    } else {
-        dataToEncode = session;
-    }
-    
-    const data = utoa(JSON.stringify(dataToEncode));
-    return `${cleanBaseUrl}#/view/${data}`;
+    const config = { url: cloudUrl.trim(), key: cloudKey.trim() };
+    const dmLink = `${baseUrl}#/dm/${utoa(JSON.stringify(config))}`;
+    try {
+        await navigator.clipboard.writeText(dmLink);
+        setDmLinkCopied(true);
+        setTimeout(() => setDmLinkCopied(false), 3000);
+    } catch(e) { console.error(e); }
   };
 
-  const shareLink = generateShareLink();
-  const isUrlLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const addManualItem = async () => {
+    if (!addingToPlayerId || !manualItemName.trim()) return;
+    setIsGeneratingImg(true);
+    let imageUrl = undefined;
+    try {
+        const prompt = `A single RPG item icon: ${manualItemName}. Dark fantasy style, detailed, on black background.`;
+        imageUrl = await generateCharacterImage(prompt);
+    } catch (e) { console.error(e); }
+
+    const newItem: VaultItem = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: manualItemName.trim(),
+        description: "Objet forgé manuellement.",
+        quantity: manualItemQty,
+        imageUrl,
+        timestamp: Date.now()
+    };
+
+    onUpdateSession({
+        ...session,
+        players: session.players.map(p => 
+            p.id === addingToPlayerId ? { ...p, inventory: [newItem, ...p.inventory] } : p
+        )
+    });
+
+    setAddingToPlayerId(null);
+    setManualItemName('');
+    setManualItemQty(1);
+    setIsGeneratingImg(false);
+  };
+
+  const shareLink = (() => {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+    let dataToEncode = isCloudEnabled ? { id: session.id, isLiveOnly: true, cloudConfig: { url: cloudUrl, key: cloudKey } } : session;
+    return `${cleanBaseUrl}#/view/${utoa(JSON.stringify(dataToEncode))}`;
+  })();
 
   const handleCopy = async () => {
     try {
         await navigator.clipboard.writeText(shareLink);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-    } catch (err) { 
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Inventaire de Session D&D',
-          text: 'Suis ton or et ton inventaire en temps réel ici !',
-          url: shareLink,
-        });
-      } catch (err) {
-        console.log('Share failed', err);
-      }
-    } else {
-      handleCopy();
-    }
+    } catch (err) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
   };
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) return;
-    const newPlayer: Player = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: newPlayerName.trim(),
-      currency: { copper: 0, silver: 0, gold: 0 },
-      inventory: []
-    };
-    onUpdateSession({ ...session, players: [...session.players, newPlayer] });
+    onUpdateSession({ ...session, players: [...session.players, { id: Math.random().toString(36).substr(2, 9), name: newPlayerName.trim(), currency: { copper: 0, silver: 0, gold: 0 }, inventory: [] }] });
     setNewPlayerName('');
   };
 
@@ -111,67 +119,41 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
   };
 
   const updateCurrency = (playerId: string, type: keyof Currency, amount: number) => {
-    onUpdateSession({
-      ...session,
-      players: session.players.map(p => {
-        if (p.id !== playerId) return p;
-        const newCurrency = { ...p.currency };
-        newCurrency[type] = Math.max(0, newCurrency[type] + amount);
-        return { ...p, currency: newCurrency };
-      })
-    });
+    onUpdateSession({ ...session, players: session.players.map(p => { if (p.id !== playerId) return p; const newCurrency = { ...p.currency }; newCurrency[type] = Math.max(0, newCurrency[type] + amount); return { ...p, currency: newCurrency }; }) });
   };
 
-  const removeItem = (playerId: string, itemId: string) => {
+  const updateItemQty = (playerId: string, itemId: string, delta: number) => {
     onUpdateSession({
-      ...session,
-      players: session.players.map(p => p.id === playerId ? { ...p, inventory: p.inventory.filter(i => i.id !== itemId) } : p)
+        ...session,
+        players: session.players.map(p => {
+            if (p.id !== playerId) return p;
+            return {
+                ...p,
+                inventory: p.inventory.map(item => {
+                    if (item.id !== itemId) return item;
+                    const newQty = Math.max(0, item.quantity + delta);
+                    return { ...item, quantity: newQty };
+                }).filter(item => item.quantity > 0)
+            };
+        })
     });
   };
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(shareLink)}&bgcolor=ffffff&color=000000&margin=3`;
 
-  const sqlCode = `create table sessions (
-  id text primary key,
-  data jsonb not null,
-  updated_at timestamp with time zone default now()
-);
-alter publication supabase_realtime add table sessions;
-alter table sessions enable row level security;
-create policy "Public Access" on sessions for all using (true);`;
-
   if (!session.isActive) {
     return (
-      <div className="h-full flex flex-col bg-darker-metal border-2 border-gold-dark/20 rounded-lg animate-fade-in overflow-hidden shadow-2xl">
+      <div className="h-full flex flex-col bg-darker-metal border-2 border-gold-dark/20 rounded-lg animate-fade-in overflow-hidden shadow-2xl min-h-[400px]">
         <div className="p-10 text-center flex-1 flex flex-col items-center justify-center space-y-8 bg-[radial-gradient(circle_at_center,_#1a1b1e_0%,_#0f1012_100%)]">
-            <div className="relative">
-                <div className="absolute inset-0 bg-gold-antique/20 blur-2xl rounded-full scale-150"></div>
-                <Briefcase className="w-20 h-20 text-gold-antique relative z-10 drop-shadow-[0_0_15px_rgba(197,160,89,0.5)]" />
-            </div>
-            
+            <div className="relative"><div className="absolute inset-0 bg-gold-antique/20 blur-2xl rounded-full scale-150"></div><Briefcase className="w-20 h-20 text-gold-antique relative z-10 drop-shadow-[0_0_15px_rgba(197,160,89,0.5)]" /></div>
             <div className="space-y-4 max-w-sm">
-                <h3 className="font-header text-2xl text-gold-antique uppercase tracking-[0.2em]">Le Coffre Virtuel</h3>
-                <div className="h-1 w-20 bg-blood-red mx-auto"></div>
-                <p className="text-sm text-parchment/70 leading-relaxed font-body italic px-4">
-                    "Un lieu sacré pour l'or et les artefacts de vos compagnons d'armes. Partagez le lien, et ils verront leurs richesses croître en temps réel."
-                </p>
+                <h3 className="font-header text-2xl text-gold-antique uppercase tracking-[0.2em]">Le Coffre du MJ</h3>
+                <div className="h-0.5 w-20 bg-blood-red mx-auto"></div>
+                <p className="text-sm text-parchment/70 leading-relaxed font-body italic px-4">Gérez les richesses et l'inventaire de vos joueurs en temps réel.</p>
             </div>
-
-            <div className="grid grid-cols-1 gap-3 w-full max-w-[280px]">
-                <button 
-                    onClick={() => onUpdateSession({ ...session, isActive: true })} 
-                    className="w-full py-5 bg-blood-dark hover:bg-blood-red text-gold-antique font-header uppercase tracking-widest border border-gold-dark/50 rounded shadow-glow-red transition-all active:scale-95 group"
-                >
-                    <span className="flex items-center justify-center gap-2">
-                        Ouvrir le Coffre <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
-                    </span>
-                </button>
-            </div>
-            
-            <div className="flex flex-col items-center gap-2 text-[10px] text-gray-600 uppercase font-bold tracking-widest opacity-50">
-                <div className="flex items-center gap-2"><ShieldCheck className="w-3 h-3" /> Chiffrement Local</div>
-                <div className="flex items-center gap-2"><Globe className="w-3 h-3" /> Prêt pour la Synchronisation</div>
-            </div>
+            <button onClick={() => onUpdateSession({ ...session, isActive: true })} className="w-full max-w-[280px] py-5 bg-blood-dark hover:bg-blood-red text-gold-antique font-header uppercase tracking-widest border border-gold-dark/50 rounded shadow-glow-red transition-all active:scale-95 group flex items-center justify-center gap-2">
+                Ouvrir le Coffre <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+            </button>
         </div>
       </div>
     );
@@ -179,218 +161,141 @@ create policy "Public Access" on sessions for all using (true);`;
 
   return (
     <div className="h-full flex flex-col bg-darker-metal border-2 border-gold-dark/30 rounded-lg relative overflow-hidden shadow-2xl">
-      
       <div className="px-5 py-4 border-b border-gold-dark/30 bg-black/60 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-            <div className="p-2 bg-blood-dark/20 border border-blood-red/30 rounded">
-                <Briefcase className="w-4 h-4 text-gold-antique" />
-            </div>
-            <div className="flex flex-col">
-                <h3 className="font-header text-xs text-gold-antique uppercase tracking-widest">Le Coffre de Romain.DnD</h3>
-                {isCloudEnabled && (
-                    <span className="text-[8px] text-green-500 font-bold uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]"></div> Synchro Magique
-                    </span>
-                )}
-            </div>
+          <div className="p-2 bg-blood-dark/30 border border-gold-dark/40 rounded shadow-glow-gold">
+            <Briefcase className="w-4 h-4 text-gold-antique" />
+          </div>
+          <div className="flex flex-col">
+            <h3 className="font-header text-[10px] md:text-xs text-gold-antique uppercase tracking-widest leading-none">Coffre Maître de Jeu</h3>
+            {isCloudEnabled && <span className="text-[7px] text-green-500 font-bold uppercase tracking-widest mt-1 flex items-center gap-1"><div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div> Synchro Live</span>}
+          </div>
         </div>
         <div className="flex gap-1">
-          <button 
-            onClick={() => { setShowShare(!showShare); setShowCloudConfig(false); setShowInGameHelp(false); }} 
-            className={`p-2 transition-all rounded-md ${showShare ? 'bg-gold-dark/30 text-gold-antique' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-            title="Partager"
-          >
-            <QrCode className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => { setShowCloudConfig(!showCloudConfig); setShowShare(false); setShowInGameHelp(false); }} 
-            className={`p-2 transition-all rounded-md ${isCloudEnabled ? 'text-green-500 bg-green-950/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-            title="Cloud"
-          >
-            <CloudLightning className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => { setShowInGameHelp(!showInGameHelp); setShowShare(false); setShowCloudConfig(false); }}
-            className={`p-2 transition-all rounded-md ${showInGameHelp ? 'text-blue-400 bg-blue-950/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
-            title="Aide"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={onReset} 
-            className="p-2 text-gray-700 hover:text-red-500 transition-colors"
-            title="Clôturer la session"
-          >
-            <ShieldX className="w-5 h-5" />
-          </button>
+          <button onClick={() => setShowShare(!showShare)} className={`p-2 rounded ${showShare ? 'bg-gold-dark/30 text-gold-antique' : 'text-gray-500 hover:text-white'}`}><QrCode className="w-4 h-4" /></button>
+          <button onClick={() => setShowCloudConfig(!showCloudConfig)} className={`p-2 rounded ${isCloudEnabled ? 'text-green-500' : 'text-gray-500'}`}><CloudLightning className="w-4 h-4" /></button>
+          <button onClick={onReset} className="p-2 text-gray-700 hover:text-red-500"><ShieldX className="w-4 h-4" /></button>
         </div>
       </div>
 
-      {(showCloudConfig || showShare || showInGameHelp) && (
-        <div className="absolute inset-x-0 top-[65px] bottom-0 z-50 p-6 bg-black/98 backdrop-blur-xl animate-fade-in flex flex-col overflow-y-auto custom-scrollbar">
-            <div className="flex items-center justify-between mb-8">
-                <h4 className="font-header text-sm text-gold-antique uppercase tracking-widest flex items-center gap-3">
-                    {showCloudConfig && <><Database className="w-5 h-5 text-green-500" /> Paramètres Cloud</>}
-                    {showShare && <><Share2 className="w-5 h-5 text-gold-antique" /> Partage de l'Inventaire</>}
-                    {showInGameHelp && <><Info className="w-5 h-5 text-blue-400" /> Guide d'utilisation</>}
-                </h4>
-                <button onClick={() => { setShowCloudConfig(false); setShowShare(false); setShowInGameHelp(false); }} className="p-2 text-gray-500 hover:text-white transition-colors bg-white/5 rounded-full"><X className="w-5 h-5" /></button>
-            </div>
-
-            {showShare && (
-                <div className="flex-1 flex flex-col items-center">
-                    
-                    {isUrlLocal && (
-                        <div className="w-full bg-red-950/30 border border-red-900/50 p-3 rounded-lg flex gap-3 items-center mb-6">
-                            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                            <p className="text-[10px] text-red-200 leading-tight">
-                                <strong>Attention :</strong> Vous êtes sur une adresse locale (localhost). <br/>
-                                Les QR Codes et liens de partage ne fonctionneront pas sur d'autres appareils.
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="bg-white p-4 border-4 border-gold-dark/30 rounded-2xl mb-8 shadow-2xl">
-                        <img src={qrUrl} alt="QR Code" className="w-56 h-56 md:w-64 md:h-64" />
-                    </div>
-
-                    <div className="w-full max-w-sm space-y-4">
-                        <button onClick={handleNativeShare} className="w-full flex items-center justify-center gap-3 py-4 bg-blood-red text-white rounded-lg font-header uppercase text-xs transition-all shadow-lg hover:bg-blood-dark active:scale-95">
-                            <Share className="w-5 h-5" /> Partager via mon téléphone
-                        </button>
-
-                        <button onClick={handleCopy} className={`w-full flex items-center justify-center gap-3 py-4 rounded-lg font-header uppercase text-xs transition-all border border-gold-dark/30 ${copied ? 'bg-green-600 text-white' : 'bg-gold-dark/10 text-gold-antique hover:bg-gold-dark/20'}`}>
-                            {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />} {copied ? 'Lien Copié !' : 'Copier le lien direct'}
-                        </button>
-                        
-                        {!isCloudEnabled && (
-                            <p className="text-[10px] text-gold-dark/50 text-center italic mt-4">
-                                "La Synchro Live (Cloud) est recommandée pour une expérience fluide sur mobile."
-                            </p>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {showCloudConfig && (
-                <div className="flex-1 space-y-6">
-                    <button onClick={() => setShowSqlGuide(!showSqlGuide)} className="w-full flex items-center justify-between px-4 py-3 bg-blue-900/10 border border-blue-800/30 rounded text-xs text-blue-400 font-bold uppercase">
-                        <span className="flex items-center gap-3"><Terminal className="w-4 h-4" /> Script SQL Supabase</span>
-                        {showSqlGuide ? <Minus className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
-                    </button>
-                    {showSqlGuide && (
-                        <div className="p-4 bg-gray-950 rounded border border-white/5 space-y-3">
-                            <pre className="text-[9px] text-green-500 font-mono bg-black/50 p-3 rounded overflow-x-auto leading-tight">{sqlCode}</pre>
-                        </div>
-                    )}
-                    <div className="space-y-5">
-                        <input type="text" placeholder="URL Supabase" value={cloudUrl} onChange={(e) => setCloudUrl(e.target.value)} className="w-full bg-black border border-gold-dark/30 rounded px-4 py-3 text-xs text-parchment outline-none" />
-                        <input type="password" placeholder="Clé Anon" value={cloudKey} onChange={(e) => setCloudKey(e.target.value)} className="w-full bg-black border border-gold-dark/30 rounded px-4 py-3 text-xs text-parchment outline-none" />
-                        <button onClick={handleSaveCloudConfig} className="w-full bg-green-900/40 text-green-400 border border-green-700/50 rounded py-4 text-xs font-bold uppercase">Activer la Magie Cloud</button>
-                    </div>
-                </div>
-            )}
-
-            {showInGameHelp && (
-                <div className="space-y-6 text-parchment/80 font-body text-sm leading-relaxed">
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                        <span className="font-bold text-gold-antique block mb-1">Comment partager ?</span>
-                        <p className="text-xs">Cliquez sur l'icône QR Code, puis scannez ou utilisez le bouton "Partager". Le lien contient l'inventaire en cours.</p>
-                    </div>
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                        <span className="font-bold text-gold-antique block mb-1">Synchro Cloud</span>
-                        <p className="text-xs">Indispensable pour que vos joueurs voient leurs objets sans rafraîchir la page dès que vous les ajoutez.</p>
-                    </div>
-                </div>
-            )}
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar pb-32">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar min-h-0">
         {session.players.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-6 py-24 border-2 border-dashed border-white/5 rounded-3xl m-4">
-                <Users className="w-16 h-16 opacity-10" />
-                <div className="text-center space-y-2">
-                    <p className="text-xs uppercase font-bold tracking-[0.3em] italic">L'auberge est vide...</p>
-                    <p className="text-[10px] text-gray-800 max-w-[200px] leading-relaxed">Ajoutez des aventuriers pour commencer la gestion du butin.</p>
-                </div>
+            <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-4 py-16 border-2 border-dashed border-white/5 rounded-2xl">
+                <Users className="w-12 h-12 opacity-10" />
+                <p className="text-[10px] uppercase font-bold tracking-widest italic opacity-40">Aucun héros à l'auberge...</p>
             </div>
         ) : (
             session.players.map(player => (
-                <div key={player.id} className="bg-black/40 border border-gold-dark/20 rounded-2xl overflow-hidden shadow-2xl animate-fade-in group hover:border-gold-dark/50 transition-all">
-                   <div className="p-4 bg-gold-dark/5 border-b border-gold-dark/10 flex flex-col gap-4">
-                      <div className="flex items-center justify-between">
-                          <span className="font-header text-sm text-gold-antique uppercase tracking-widest flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-gold-dark/10 flex items-center justify-center border border-gold-dark/30">
-                                <User className="w-4 h-4 opacity-50 text-gold-antique" />
-                              </div>
-                              {player.name}
-                          </span>
-                          <button onClick={() => removePlayer(player.id)} className="p-2 text-gray-800 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all">
-                              <Trash2 className="w-4 h-4" />
-                          </button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                          {[
-                            { type: 'gold', color: 'text-yellow-500', label: 'Or' },
-                            { type: 'silver', color: 'text-gray-300', label: 'Argent' },
-                            { type: 'copper', color: 'text-orange-600', label: 'Cuivre' }
-                          ].map((coin) => (
-                              <div key={coin.type} className="bg-black/60 rounded-xl p-3 border border-gold-dark/10 flex flex-col items-center shadow-inner">
-                                  <span className={`text-xs font-bold ${coin.color} mb-2 tracking-widest`}>
-                                      {(player.currency as any)[coin.type]} <span className="text-[8px] uppercase opacity-50">{coin.label.charAt(0)}</span>
-                                  </span>
-                                  <div className="flex gap-4">
-                                      <button onClick={() => updateCurrency(player.id, coin.type as any, -1)} className="text-gray-500 hover:text-white text-lg font-bold w-6 h-6 flex items-center justify-center transition-colors">-</button>
-                                      <button onClick={() => updateCurrency(player.id, coin.type as any, 1)} className="text-gray-500 hover:text-white text-lg font-bold w-6 h-6 flex items-center justify-center transition-colors">+</button>
-                                  </div>
-                              </div>
-                          ))}
+                <div key={player.id} className="bg-black/40 border border-gold-dark/20 rounded-xl overflow-hidden group hover:border-gold-dark/40 transition-all">
+                   <div className="p-3 bg-gold-dark/5 border-b border-gold-dark/10 flex items-center justify-between">
+                      <span className="font-header text-xs text-gold-antique uppercase tracking-wider flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-gold-dark/10 flex items-center justify-center border border-gold-dark/20"><User className="w-3 h-3 text-gold-antique" /></div>{player.name}</span>
+                      <div className="flex items-center gap-1">
+                          <button onClick={() => setAddingToPlayerId(player.id)} className="p-1.5 text-gold-dark hover:text-gold-antique transition-colors"><PlusCircle className="w-4 h-4" /></button>
+                          <button onClick={() => removePlayer(player.id)} className="p-1.5 text-gray-800 hover:text-red-500 transition-colors"><Trash2 className="w-3 h-3" /></button>
                       </div>
                    </div>
-                   <div className="p-4 space-y-2.5 min-h-[60px]">
-                      {player.inventory.length === 0 ? (
-                          <p className="text-[9px] text-gray-700 italic text-center py-4">Le sac est vide.</p>
-                      ) : (
-                          player.inventory.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-xl border border-transparent hover:border-gold-dark/20 group/item transition-all shadow-sm">
-                               <div className="w-12 h-12 rounded-lg bg-black/60 flex items-center justify-center shrink-0 border border-white/5 overflow-hidden">
-                                   {item.imageUrl ? <img src={item.imageUrl} className="w-full h-full object-cover" alt={item.name} /> : <Box className="w-5 h-5 text-gray-700" />}
-                               </div>
-                               <div className="flex-1 min-w-0">
-                                   <p className="text-xs font-bold text-parchment truncate leading-none mb-1 uppercase tracking-wider">{item.name}</p>
-                                   <p className="text-[9px] text-gray-600 truncate italic">Artefact récupéré</p>
-                               </div>
-                               <button onClick={() => removeItem(player.id, item.id)} className="text-red-900/30 hover:text-red-600 p-2 opacity-0 group-hover/item:opacity-100 transition-all rounded-full hover:bg-red-600/10">
-                                   <Minus className="w-4 h-4" />
-                               </button>
+                   <div className="p-3 grid grid-cols-3 gap-2">
+                        {[{ type: 'gold', color: 'text-yellow-500' }, { type: 'silver', color: 'text-gray-300' }, { type: 'copper', color: 'text-orange-600' }].map((coin) => (
+                            <div key={coin.type} className="bg-black/40 rounded-lg p-2 border border-white/5 flex flex-col items-center">
+                                <span className={`text-[11px] font-bold ${coin.color}`}>{(player.currency as any)[coin.type]}</span>
+                                <div className="flex gap-3 mt-1 opacity-40 group-hover:opacity-100 transition-all">
+                                    <button onClick={() => updateCurrency(player.id, coin.type as any, -1)} className="hover:text-white text-xs">-</button>
+                                    <button onClick={() => updateCurrency(player.id, coin.type as any, 1)} className="hover:text-white text-xs">+</button>
+                                </div>
                             </div>
-                          ))
-                      )}
+                        ))}
                    </div>
+                   {player.inventory.length > 0 && (
+                       <div className="px-3 pb-3 space-y-1.5">
+                           {player.inventory.map(item => (
+                               <div key={item.id} className="flex flex-col bg-white/5 rounded-lg border border-white/5 overflow-hidden">
+                                   <div 
+                                        onClick={() => setExpandedItemId(expandedItemId === item.id ? null : item.id)}
+                                        className="flex items-center gap-3 p-2 cursor-pointer hover:bg-white/10 transition-colors"
+                                    >
+                                       <div className="w-8 h-8 rounded bg-black flex items-center justify-center shrink-0 overflow-hidden border border-white/5">
+                                           {item.imageUrl ? <img src={item.imageUrl} className="w-full h-full object-cover" alt="" /> : <Box className="w-4 h-4 text-gray-700" />}
+                                       </div>
+                                       <div className="flex-1 min-w-0 flex items-center justify-between">
+                                           <span className="text-[10px] font-bold text-parchment truncate uppercase">{item.name}</span>
+                                           <div className="flex items-center gap-2">
+                                               <span className="text-[9px] font-header text-gold-antique">x{item.quantity}</span>
+                                               <button onClick={(e) => { e.stopPropagation(); updateItemQty(player.id, item.id, -1); }} className="text-gray-600 hover:text-red-400 p-1"><Minus className="w-3 h-3" /></button>
+                                           </div>
+                                       </div>
+                                       {expandedItemId === item.id ? <ChevronUp className="w-3 h-3 text-gold-dark" /> : <ChevronDown className="w-3 h-3 text-gold-dark" />}
+                                   </div>
+                                   {expandedItemId === item.id && (
+                                       <div className="px-3 pb-3 pt-1 text-[9px] text-parchment/60 italic font-body animate-fade-in border-t border-white/5 mt-1 bg-black/20">
+                                            {item.description}
+                                       </div>
+                                   )}
+                               </div>
+                           ))}
+                       </div>
+                   )}
                 </div>
-              ))
+            ))
         )}
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black via-black/95 to-transparent pt-16">
-        <div className="flex gap-3 bg-darker-metal p-1.5 rounded-xl border border-gold-dark/40 shadow-[0_0_30px_rgba(0,0,0,1)]">
+      <div className="shrink-0 p-4 border-t border-gold-dark/20 bg-black/60 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+        <div className="flex gap-2 bg-darker-metal p-1 rounded-lg border border-gold-dark/30">
             <input 
                 type="text" 
-                placeholder="Nom du héros..." 
+                placeholder="Nouveau héros..." 
                 value={newPlayerName} 
                 onChange={(e) => setNewPlayerName(e.target.value)} 
+                className="flex-1 bg-transparent border-none px-3 py-2 text-xs text-parchment outline-none placeholder-gray-800"
                 onKeyDown={(e) => e.key === 'Enter' && addPlayer()}
-                className="flex-1 bg-transparent border-none px-4 py-3 text-sm text-parchment focus:ring-0 outline-none placeholder-gray-800 font-body" 
             />
-            <button 
-                onClick={addPlayer} 
-                className="bg-blood-dark/30 text-gold-antique border border-gold-dark/40 px-6 rounded-lg transition-all hover:bg-blood-dark hover:text-white active:scale-95 shadow-lg"
-            >
-                <UserPlus className="w-5 h-5" />
+            <button onClick={addPlayer} className="bg-gold-dark/20 text-gold-antique p-2 rounded hover:bg-gold-dark/40 transition-all">
+                <UserPlus className="w-4 h-4" />
             </button>
         </div>
       </div>
+
+      {(showShare || showCloudConfig) && (
+          <div className="absolute inset-0 z-[60] bg-black/95 p-6 animate-fade-in flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                  <h4 className="font-header text-xs text-gold-antique uppercase tracking-widest">{showShare ? 'Partager l\'Inventaire' : 'Configuration Cloud'}</h4>
+                  <button onClick={() => { setShowShare(false); setShowCloudConfig(false); }} className="p-2 bg-white/5 rounded-full"><X className="w-4 h-4" /></button>
+              </div>
+              {showShare && (
+                  <div className="flex flex-col items-center gap-6">
+                      <div className="bg-white p-3 rounded-xl border-4 border-gold-dark/40"><img src={qrUrl} className="w-48 h-48" alt="QR" /></div>
+                      <button onClick={handleCopy} className={`w-full py-3 rounded font-header text-[10px] uppercase tracking-widest ${copied ? 'bg-green-600 text-white' : 'bg-gold-dark/20 text-gold-antique'}`}>{copied ? 'Lien Copié !' : 'Copier le lien direct'}</button>
+                  </div>
+              )}
+              {showCloudConfig && (
+                  <div className="space-y-4">
+                      <input type="text" placeholder="Supabase URL" value={cloudUrl} onChange={e => setCloudUrl(e.target.value)} className="w-full bg-black border border-gold-dark/30 rounded p-3 text-xs text-parchment outline-none" />
+                      <input type="password" placeholder="Supabase Key" value={cloudKey} onChange={e => setCloudKey(e.target.value)} className="w-full bg-black border border-gold-dark/30 rounded p-3 text-xs text-parchment outline-none" />
+                      <button onClick={handleSaveCloudConfig} className="w-full py-3 bg-green-900/40 text-green-400 font-header text-[10px] uppercase border border-green-500/30 rounded">Activer Synchro</button>
+                      <button onClick={handleGenerateDMLink} className={`w-full py-3 border rounded font-header text-[10px] uppercase transition-all ${dmLinkCopied ? 'bg-gold-antique text-black border-gold-antique' : 'border-gold-dark/30 text-gold-antique'}`}>{dmLinkCopied ? 'Lien MJ Copié !' : 'Générer Lien MJ'}</button>
+                  </div>
+              )}
+          </div>
+      )}
+
+      {addingToPlayerId && (
+          <div className="absolute inset-0 z-[60] bg-black/95 p-6 animate-fade-in flex flex-col items-center justify-center">
+              <div className="w-full space-y-4">
+                  <h4 className="font-header text-xs text-gold-antique uppercase tracking-widest text-center mb-4">Forge d'objet manuel</h4>
+                  <input type="text" value={manualItemName} onChange={e => setManualItemName(e.target.value)} placeholder="Nom de l'objet..." className="w-full bg-black border border-gold-dark/30 rounded p-3 text-xs text-parchment outline-none" />
+                  <div className="flex items-center justify-center gap-4">
+                      <button onClick={() => setManualItemQty(Math.max(1, manualItemQty - 1))} className="w-8 h-8 rounded bg-gold-dark/20 text-gold-antique">-</button>
+                      <span className="font-header text-gold-antique">x{manualItemQty}</span>
+                      <button onClick={() => setManualItemQty(manualItemQty + 1)} className="w-8 h-8 rounded bg-gold-dark/20 text-gold-antique">+</button>
+                  </div>
+                  <button onClick={addManualItem} disabled={!manualItemName.trim() || isGeneratingImg} className="w-full py-3 bg-blood-dark text-gold-antique font-header text-[10px] uppercase border border-gold-dark/40 rounded flex items-center justify-center gap-2">
+                      {isGeneratingImg ? <Sparkles className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                      Forger l'objet
+                  </button>
+                  <button onClick={() => setAddingToPlayerId(null)} className="w-full py-3 text-gray-500 font-header text-[9px] uppercase transition-colors">Annuler</button>
+              </div>
+          </div>
+      )}
     </div>
   );
 };
