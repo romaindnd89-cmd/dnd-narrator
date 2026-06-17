@@ -32,7 +32,7 @@ export const saveSessionToCloud = async (session: SessionState) => {
         }, { onConflict: 'id' });
     
     if (error) {
-        console.warn("Erreur de synchro Cloud : La table 'sessions' n'existe peut-être pas encore.", error);
+        console.warn("Erreur de synchro Cloud : La table 'sessions' n'existe peut-être pas ou RLS est activé. (Exécutez le script SQL fourni dans l'interface)", error);
     }
 };
 

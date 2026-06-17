@@ -180,7 +180,7 @@ const App: React.FC = () => {
             D&D Narrator
           </h1>
           <div className="flex items-center gap-3 mt-1 md:mt-2">
-            <p className="text-blood-red font-fantasy text-[6px] md:text-xs tracking-[0.4em] opacity-70 uppercase whitespace-nowrap">Forgé par Romain.DnD89</p>
+            <p className="text-gold-antique font-fantasy text-[6px] md:text-xs tracking-[0.4em] font-semibold uppercase whitespace-nowrap drop-shadow-[0_0_5px_rgba(255,215,0,0.3)]">Forgé par Romain.DnD89</p>
             <a href="https://www.instagram.com/romain.dnd89/" target="_blank" className="text-gold-dark hover:text-gold-antique transition-all hover:scale-110">
                 <Instagram className="w-2.5 h-2.5 md:w-4 h-4" />
             </a>
@@ -199,7 +199,7 @@ const App: React.FC = () => {
       </header>
 
       {/* MAIN CONTENT : Padding bas réduit */}
-      <main className="relative z-20 w-full max-w-[1600px] px-4 md:px-6 flex flex-col lg:flex-row items-start gap-6 md:gap-8 flex-1 pb-32 lg:pb-16">
+      <main className="relative z-20 w-full max-w-[1600px] px-4 md:px-6 flex flex-col lg:flex-row items-stretch gap-6 md:gap-8 flex-1 pb-32 lg:pb-16">
         <aside className="w-full lg:w-[350px] shrink-0 space-y-4">
             <NarratorForm 
               combatState={combatState} 
@@ -243,8 +243,10 @@ const App: React.FC = () => {
           )}
         </section>
 
-        <aside className="hidden lg:block lg:w-[400px] shrink-0 self-stretch">
-          <VirtualVault session={session} onUpdateSession={setSession} onReset={() => setSession({ ...session, players: [], isActive: false })} />
+        <aside className="hidden lg:block lg:w-[400px] shrink-0 relative">
+          <div className="sticky top-4 h-[calc(100vh-100px)]">
+            <VirtualVault session={session} onUpdateSession={setSession} onReset={() => setSession({ ...session, players: [], isActive: false })} />
+          </div>
         </aside>
       </main>
 

@@ -9,6 +9,46 @@ import { WeaponType, DiceResult } from "../types";
 
 const SOUND_LIBRARY: Record<string, string> = {
     // --- AMBIANCES (Boucles) ---
+    rain: "https://archive.org/download/soundreality-fire-ambience-528618/liecio-calming-rain-257596.mp3",
+    thunder: "https://archive.org/download/soundreality-fire-ambience-528618/soundreality-thunder-sound-375727.mp3",
+    wind: "https://archive.org/download/soundreality-fire-ambience-528618/dragon-studio-winter-wind-402331.mp3",
+    forest: "https://archive.org/download/soundreality-fire-ambience-528618/freesound_community-foret-oiseaux-et-brise-27890.mp3",
+    cave: "https://archive.org/download/soundreality-fire-ambience-528618/freesound_community-spooky_grotto-18352.mp3",
+    tavern: "https://archive.org/download/soundreality-fire-ambience-528618/freesound_community-music-in-greek-taverna-49137.mp3",
+    camp: "https://archive.org/download/soundreality-fire-ambience-528618/soundreality-fire-ambience-528618.mp3",
+    dark_ambience: "https://archive.org/download/soundreality-fire-ambience-528618/soundreality-cinematic-horror-pad-517323.mp3",
+    
+    // --- COMBAT ---
+    sword_swing: "https://archive.org/download/soundreality-fire-ambience-528618/dragon-studio-violent-sword-slice-393839.mp3",
+    sword_hit: "https://archive.org/download/soundreality-fire-ambience-528618/daviddumaisaudio-sword-slash-with-metal-shield-impact-185433.mp3",
+    dagger: "https://archive.org/download/soundreality-fire-ambience-528618/daviddumaisaudio-metal-dagger-hit-185444.mp3",
+    bow_shoot: "https://archive.org/download/soundreality-fire-ambience-528618/dennish18-arrow-body-impact-146419.mp3",
+    punch: "https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3",
+    
+    // --- MAGIE ---
+    fireball: "https://archive.org/download/yodguard-dark-magic-1-378650/dragon-studio-fire-spell-impact-393921.mp3",
+    ice: "https://archive.org/download/yodguard-dark-magic-1-378650/dragon-studio-ice-spell-impact-448563.mp3",
+    lightning: "https://archive.org/download/yodguard-dark-magic-1-378650/dragon-studio-electric-spell-impact-393918.mp3",
+    heal: "https://archive.org/download/yodguard-dark-magic-1-378650/latent-rick-fantasy-healing-spell-cast-1-547831.mp3",
+    curse: "https://archive.org/download/yodguard-dark-magic-1-378650/yodguard-dark-magic-1-378650.mp3",
+    teleport: "https://archive.org/download/yodguard-dark-magic-1-378650/universfield-magic-teleport-whoosh-352764.mp3",
+    
+    // --- MONSTRES ---
+    roar: "https://archive.org/download/u_83ynl5kta9-giant-walking-149155/dragon-studio-epic-dragon-roar-364481.mp3",
+    ghost: "https://archive.org/download/u_83ynl5kta9-giant-walking-149155/freesound_community-little-girl-ghost-101813.mp3",
+    zombie: "https://archive.org/download/u_83ynl5kta9-giant-walking-149155/dragon-studio-zombie-sound-2-357976.mp3",
+    steps_heavy: "https://archive.org/download/u_83ynl5kta9-giant-walking-149155/u_83ynl5kta9-giant-walking-149155.mp3",
+    
+    // --- INTERACTIF ---
+    dice: "https://assets.mixkit.co/active_storage/sfx/2579/2579-preview.mp3",
+    trap: "https://archive.org/download/dragon-studio-door-creaking-335491/rison8-dbd-bear-trap-being-disarmed-135902.mp3",
+    door_creak: "https://archive.org/download/dragon-studio-door-creaking-335491/dragon-studio-door-creaking-335491.mp3",
+    chest_open: "https://archive.org/download/dragon-studio-door-creaking-335491/freesound_community-chest-opening-87569.mp3",
+    lockpick: "https://archive.org/download/dragon-studio-door-creaking-335491/hasin2004-key-lock-sound-247454.mp3",
+    coin: "https://archive.org/download/dragon-studio-door-creaking-335491/yodguard-coin-collect-3-540190.mp3",
+};
+
+const DEFAULT_SOUND_LIBRARY: Record<string, string> = {
     rain: "https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3",
     thunder: "https://assets.mixkit.co/active_storage/sfx/2390/2390-preview.mp3",
     wind: "https://assets.mixkit.co/active_storage/sfx/1381/1381-preview.mp3",
@@ -17,35 +57,10 @@ const SOUND_LIBRARY: Record<string, string> = {
     tavern: "https://assets.mixkit.co/active_storage/sfx/455/455-preview.mp3",
     camp: "https://assets.mixkit.co/active_storage/sfx/1657/1657-preview.mp3",
     dark_ambience: "https://opengameart.org/sites/default/files/Socapex%20-%20Dark%20ambiance_3.mp3",
-    
-    // --- COMBAT ---
     sword_swing: "https://assets.mixkit.co/active_storage/sfx/2403/2403-preview.mp3",
     sword_hit: "https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3",
     dagger: "https://assets.mixkit.co/active_storage/sfx/2404/2404-preview.mp3",
-    bow_shoot: "https://assets.mixkit.co/active_storage/sfx/314/314-preview.mp3",
-    punch: "https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3",
-    
-    // --- MAGIE ---
-    fireball: "https://assets.mixkit.co/active_storage/sfx/1660/1660-preview.mp3",
-    ice: "https://assets.mixkit.co/active_storage/sfx/1665/1665-preview.mp3",
-    lightning: "https://assets.mixkit.co/active_storage/sfx/1651/1651-preview.mp3",
-    heal: "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3",
-    curse: "https://assets.mixkit.co/active_storage/sfx/268/268-preview.mp3",
-    teleport: "https://assets.mixkit.co/active_storage/sfx/1447/1447-preview.mp3",
-    
-    // --- MONSTRES ---
-    roar: "https://assets.mixkit.co/active_storage/sfx/1608/1608-preview.mp3",
-    ghost: "https://assets.mixkit.co/active_storage/sfx/2443/2443-preview.mp3",
-    zombie: "https://assets.mixkit.co/active_storage/sfx/2442/2442-preview.mp3",
-    steps_heavy: "https://assets.mixkit.co/active_storage/sfx/2065/2065-preview.mp3",
-    
-    // --- INTERACTIF ---
-    dice: "https://assets.mixkit.co/active_storage/sfx/2579/2579-preview.mp3",
-    trap: "https://assets.mixkit.co/active_storage/sfx/1105/1105-preview.mp3",
-    door_creak: "https://assets.mixkit.co/active_storage/sfx/192/192-preview.mp3",
-    chest_open: "https://assets.mixkit.co/active_storage/sfx/1118/1118-preview.mp3",
-    lockpick: "https://assets.mixkit.co/active_storage/sfx/1108/1108-preview.mp3",
-    coin: "https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3",
+    bow_shoot: "https://assets.mixkit.co/active_storage/sfx/314/314-preview.mp3"
 };
 
 // Gestion de l'état audio
@@ -70,8 +85,16 @@ const getAudio = (key: string): HTMLAudioElement | null => {
     const audio = new Audio(url);
     audio.preload = 'auto';
     // Gestion d'erreur basique pour éviter de crasher l'app si un lien est mort
+    // Ajout d'un système de repli (fallback) car Google Drive bloque les fichiers "restreints"
     audio.onerror = () => {
-        console.warn(`[Sound] Impossible de charger le son : ${key} (${url})`);
+        console.warn(`[Sound] Impossible de charger le son custom: ${key} (${url}). (Vérifiez que le partage GDrive est "Tous ceux qui ont le lien" sans restriction). Bascule sur son par défaut.`);
+        
+        // Tester le son de fallback s'il existe
+        const defaultUrl = DEFAULT_SOUND_LIBRARY[key];
+        if (defaultUrl && audio.src !== defaultUrl) {
+             audio.src = defaultUrl;
+             audio.load();
+        }
     };
     
     audioCache.set(key, audio);

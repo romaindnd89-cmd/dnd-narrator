@@ -6,7 +6,9 @@ import { initSupabase, subscribeToSession, getSessionFromCloud } from '../servic
 
 const atou = (str: string) => {
     try {
-        return decodeURIComponent(atob(str).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        return decodeURIComponent(atob(b64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
     } catch(e) { return null; }
 };
 

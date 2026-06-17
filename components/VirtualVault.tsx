@@ -6,7 +6,7 @@ import { initSupabase, saveSessionToCloud } from '../services/supabaseService';
 import { generateCharacterImage } from '../services/geminiService';
 import QRCode from 'qrcode';
 
-const utoa = (str: string) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16))));
+const utoa = (str: string) => btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode(parseInt(p1, 16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 interface VirtualVaultProps {
   session: SessionState;
@@ -52,7 +52,14 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
         id: session.id,
         name: session.name,
         cloudConfig: { url: supabaseUrl, key: supabaseKey }
-    } : session;
+    } : {
+        ...session,
+        // Strip large data out of static QR code payload to prevent it from becoming invalid
+        players: session.players.map(p => ({
+            ...p,
+            inventory: p.inventory?.map(i => ({ ...i, imageUrl: undefined }))
+        }))
+    };
 
     return `${cleanBaseUrl}#/view/${utoa(JSON.stringify(sessionData))}`;
   })();
@@ -134,7 +141,7 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
   };
 
   const handleCopySql = async () => {
-    const sql = `-- 1. Crée la table\ncreate table if not exists sessions (\n  id text primary key,\n  data jsonb,\n  updated_at timestamp with time zone default timezone('utc'::text, now())\n);\n\n-- 2. Autorise l'accès (Désactive RLS)\nalter table sessions disable row level security;\n\n-- 3. Active le Temps Réel (Live)\nalter publication supabase_realtime add table sessions;`;
+    const sql = `-- 1. Crée la table si elle n'existe pas\ncreate table if not exists sessions (\n  id text primary key,\n  data jsonb,\n  updated_at timestamp with time zone default timezone('utc'::text, now())\n);\n\n-- 2. Désactive la sécurité RLS\n-- CELA CORRIGE L'ERREUR 42501 (violates row-level security policy)\nalter table sessions disable row level security;\n\n-- 3. Active le Temps Réel (Live) - Ignorez si erreur disant qu'elle y est déjà\nalter publication supabase_realtime add table sessions;`;
     await navigator.clipboard.writeText(sql);
     setSqlCopied(true);
     setTimeout(() => setSqlCopied(false), 2000);
@@ -413,11 +420,11 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
                                 <span className="bg-gold-dark text-black rounded-full w-4 h-4 flex items-center justify-center text-[9px]">2</span> Créer la Table (SQL)
                             </h5>
                             <p className="text-[10px] text-gray-400 pl-6">
-                                Allez dans l'onglet <strong>SQL Editor</strong> (à gauche), collez le code ci-dessous, puis cliquez sur le bouton <strong className="text-emerald-400 flex items-center gap-1 inline-flex border border-emerald-500/30 px-1 rounded bg-emerald-900/20"><Play className="w-2 h-2"/> RUN</strong>.
+                                Allez dans l'onglet <strong>SQL Editor</strong> (à gauche), collez le code ci-dessous, puis cliquez sur le bouton <strong className="text-emerald-400 flex items-center gap-1 inline-flex border border-emerald-500/30 px-1 rounded bg-emerald-900/20"><Play className="w-2 h-2"/> RUN</strong> <span className="text-gold-antique">(ou "Run without RLS" si Supabase vous le demande)</span>.
                             </p>
                             <div className="ml-6 bg-black border border-gray-700 rounded p-2 relative group">
                                 <code className="text-[9px] font-mono text-green-400 block whitespace-pre-wrap">
-                                    {`-- 1. Crée la table\ncreate table if not exists sessions (\n  id text primary key,\n  data jsonb,\n  updated_at timestamp with time zone default timezone('utc'::text, now())\n);\n\n-- 2. Autorise l'accès (Désactive RLS)\nalter table sessions disable row level security;\n\n-- 3. Active le Temps Réel (Live)\nalter publication supabase_realtime add table sessions;`}
+                                    {`-- 1. Crée la table si elle n'existe pas\ncreate table if not exists sessions (\n  id text primary key,\n  data jsonb,\n  updated_at timestamp with time zone default timezone('utc'::text, now())\n);\n\n-- 2. Désactive la sécurité RLS\n-- CELA CORRIGE L'ERREUR 42501 (violates row-level security policy)\nalter table sessions disable row level security;\n\n-- 3. Active le Temps Réel (Live) - Ignorez si erreur disant qu'elle y est déjà\nalter publication supabase_realtime add table sessions;`}
                                 </code>
                                 <button 
                                     onClick={handleCopySql} 
