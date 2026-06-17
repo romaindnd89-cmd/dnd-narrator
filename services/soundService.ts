@@ -1,188 +1,213 @@
 
 import { WeaponType, DiceResult } from "../types";
 
-let audioCtx: AudioContext | null = null;
-const soundCache: Map<string, AudioBuffer> = new Map();
+// ==================================================================================
+// 🎵 CONFIGURATION DES SONS (VOTRE RÉPERTOIRE HÉBERGÉ)
+// ==================================================================================
+// Dès que vous aurez créé votre répertoire, nous remplacerons les liens ci-dessous.
+// En attendant, voici une configuration de secours stable.
 
-// Son de dé de secours (petit "clac" encodé en base64) pour garantir un feedback même hors ligne/erreur réseau
-const FALLBACK_DICE_B64 = "UklGRi4AAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="; 
-
-// CONFIGURATION DES SOURCES (Dépôt Heileis stable)
-const SOURCES = [
-  {
-    name: "Heileis (Raw)",
-    base: "https://raw.githubusercontent.com/Heileis/DND-Soundboard/master/sounds"
-  },
-  {
-    name: "Heileis (CDN)",
-    base: "https://cdn.jsdelivr.net/gh/Heileis/DND-Soundboard@master/sounds"
-  }
-];
-
-// CHEMINS RELATIFS EXACTS (Minuscules obligatoires pour ce repo)
-const FILE_PATHS: Record<string, string> = {
-    rain: "weather/rain.mp3",
-    thunder: "weather/thunder.mp3",
-    wind: "ambiance/wind.mp3",
-    forest: "ambiance/forest.mp3",
-    dungeon: "ambiance/cave.mp3", // 'dungeon.mp3' n'existe pas toujours, 'cave.mp3' est sûr
-    roar: "monsters/dragon_roar.mp3",
-    hit_flesh: "combat/hit.mp3",
-    hit_armor: "combat/sword_hit_armor.mp3",
-    sword_swing: "combat/sword_swing.mp3",
-    ghost: "magic/ghost.mp3",
-    magic_blast: "magic/fireball.mp3",
-    electric: "magic/lightning.mp3",
-    trap: "traps/trap.mp3",
-    ice: "magic/ice.mp3",
-    dice: "dice/dice.mp3"
+const SOUND_LIBRARY: Record<string, string> = {
+    // --- AMBIANCES (Boucles) ---
+    rain: "https://assets.mixkit.co/active_storage/sfx/2515/2515-preview.mp3",
+    thunder: "https://assets.mixkit.co/active_storage/sfx/2390/2390-preview.mp3",
+    wind: "https://assets.mixkit.co/active_storage/sfx/1381/1381-preview.mp3",
+    forest: "https://assets.mixkit.co/active_storage/sfx/2432/2432-preview.mp3",
+    cave: "https://assets.mixkit.co/active_storage/sfx/2437/2437-preview.mp3",
+    tavern: "https://assets.mixkit.co/active_storage/sfx/455/455-preview.mp3",
+    camp: "https://assets.mixkit.co/active_storage/sfx/1657/1657-preview.mp3",
+    dark_ambience: "https://opengameart.org/sites/default/files/Socapex%20-%20Dark%20ambiance_3.mp3",
+    
+    // --- COMBAT ---
+    sword_swing: "https://assets.mixkit.co/active_storage/sfx/2403/2403-preview.mp3",
+    sword_hit: "https://assets.mixkit.co/active_storage/sfx/209/209-preview.mp3",
+    dagger: "https://assets.mixkit.co/active_storage/sfx/2404/2404-preview.mp3",
+    bow_shoot: "https://assets.mixkit.co/active_storage/sfx/314/314-preview.mp3",
+    punch: "https://assets.mixkit.co/active_storage/sfx/2048/2048-preview.mp3",
+    
+    // --- MAGIE ---
+    fireball: "https://assets.mixkit.co/active_storage/sfx/1660/1660-preview.mp3",
+    ice: "https://assets.mixkit.co/active_storage/sfx/1665/1665-preview.mp3",
+    lightning: "https://assets.mixkit.co/active_storage/sfx/1651/1651-preview.mp3",
+    heal: "https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3",
+    curse: "https://assets.mixkit.co/active_storage/sfx/268/268-preview.mp3",
+    teleport: "https://assets.mixkit.co/active_storage/sfx/1447/1447-preview.mp3",
+    
+    // --- MONSTRES ---
+    roar: "https://assets.mixkit.co/active_storage/sfx/1608/1608-preview.mp3",
+    ghost: "https://assets.mixkit.co/active_storage/sfx/2443/2443-preview.mp3",
+    zombie: "https://assets.mixkit.co/active_storage/sfx/2442/2442-preview.mp3",
+    steps_heavy: "https://assets.mixkit.co/active_storage/sfx/2065/2065-preview.mp3",
+    
+    // --- INTERACTIF ---
+    dice: "https://assets.mixkit.co/active_storage/sfx/2579/2579-preview.mp3",
+    trap: "https://assets.mixkit.co/active_storage/sfx/1105/1105-preview.mp3",
+    door_creak: "https://assets.mixkit.co/active_storage/sfx/192/192-preview.mp3",
+    chest_open: "https://assets.mixkit.co/active_storage/sfx/1118/1118-preview.mp3",
+    lockpick: "https://assets.mixkit.co/active_storage/sfx/1108/1108-preview.mp3",
+    coin: "https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3",
 };
 
-const getAudioContext = async () => {
-  if (!audioCtx) {
-    // @ts-ignore
-    const CtxClass = window.AudioContext || window.webkitAudioContext;
-    audioCtx = new CtxClass();
-  }
-  if (audioCtx.state === 'suspended') {
-    await audioCtx.resume();
-  }
-  return audioCtx;
+// Gestion de l'état audio
+let currentAmbience: HTMLAudioElement | null = null;
+let currentAmbienceKey: string | null = null;
+const audioCache: Map<string, HTMLAudioElement> = new Map();
+
+// Récupère ou crée l'objet Audio
+const getAudio = (key: string): HTMLAudioElement | null => {
+    const url = SOUND_LIBRARY[key];
+    if (!url) return null;
+
+    if (audioCache.has(key)) {
+        const cached = audioCache.get(key)!;
+        // On rembobine pour pouvoir rejouer le son
+        if (cached.readyState >= 2) {
+             cached.currentTime = 0;
+        }
+        return cached;
+    }
+
+    const audio = new Audio(url);
+    audio.preload = 'auto';
+    // Gestion d'erreur basique pour éviter de crasher l'app si un lien est mort
+    audio.onerror = () => {
+        console.warn(`[Sound] Impossible de charger le son : ${key} (${url})`);
+    };
+    
+    audioCache.set(key, audio);
+    return audio;
 };
 
-const loadSound = async (key: string): Promise<AudioBuffer | null> => {
-  // 1. Cache
-  if (soundCache.has(key)) return soundCache.get(key)!;
-
-  const ctx = await getAudioContext();
-  const relativePath = FILE_PATHS[key];
-
-  if (!relativePath) {
-      console.error(`[Audio] Clé de son non configurée : ${key}`);
-      return null;
-  }
-
-  // 2. Tentatives Sources Réseau
-  for (const source of SOURCES) {
-    const url = `${source.base}/${relativePath}`;
+// Jouer un effet sonore (Fire & Forget)
+export const playEffect = async (key: string, volume: number = 0.5) => {
     try {
-      const response = await fetch(url);
-      if (response.ok) {
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = await ctx.decodeAudioData(arrayBuffer);
-        soundCache.set(key, buffer);
-        console.log(`[Audio] Chargé succès (${source.name}): ${key}`);
-        return buffer;
-      }
+        const audio = getAudio(key);
+        if (!audio) return;
+
+        // On clone le noeud pour permettre de jouer le même son plusieurs fois simultanément
+        // (ex: pluie de flèches ou clics rapides)
+        const clone = audio.cloneNode() as HTMLAudioElement;
+        clone.volume = Math.max(0, Math.min(1, volume));
+        
+        await clone.play();
+        
+        // Nettoyage après lecture
+        clone.onended = () => clone.remove();
     } catch (e) {
-      // Continue vers la source suivante
+        // Ignorer les erreurs d'interaction (ex: l'utilisateur n'a pas encore cliqué sur la page)
+        // console.warn(`[Sound] Erreur lecture ${key}`, e);
     }
-  }
-
-  // Fallback silencieux pour éviter le spam d'erreur si vraiment introuvable
-  console.warn(`[Audio] Échec chargement : ${key} (Chemin: ${relativePath})`);
-  return null;
 };
 
-const play = async (key: string, options: { volume?: number, loop?: boolean, pitchVar?: number } = {}) => {
-  try {
-    const buffer = await loadSound(key);
-    if (!buffer) return null;
+// Jouer une ambiance en boucle avec fondu
+export const playAmbienceLoop = async (key: string, volume: number = 0.3) => {
+    // Si c'est déjà la même ambiance qui joue, on ne fait rien
+    if (currentAmbienceKey === key && currentAmbience && !currentAmbience.paused) return;
 
-    const ctx = await getAudioContext();
-    const source = ctx.createBufferSource();
-    const gainNode = ctx.createGain();
-    
-    source.buffer = buffer;
-    source.loop = options.loop || false;
+    // On arrête l'ambiance précédente
+    stopAmbience();
 
-    if (options.pitchVar) {
-        const detune = (Math.random() * options.pitchVar * 2) - options.pitchVar;
-        source.detune.value = detune;
+    try {
+        const audio = getAudio(key);
+        if (!audio) return;
+
+        audio.loop = true;
+        audio.volume = 0; // On commence à 0 pour le Fade In
+        currentAmbience = audio;
+        currentAmbienceKey = key;
+
+        await audio.play();
+
+        // Fade In manuel
+        let vol = 0;
+        const fadeInterval = setInterval(() => {
+            if (!currentAmbience || currentAmbience !== audio) {
+                clearInterval(fadeInterval);
+                return;
+            }
+            vol += 0.05;
+            if (vol >= volume) {
+                vol = volume;
+                clearInterval(fadeInterval);
+            }
+            audio.volume = vol;
+        }, 100);
+
+    } catch (e) {
+        console.error(`[Sound] Erreur ambiance ${key}`, e);
     }
+};
 
-    gainNode.gain.value = options.volume ?? 0.5;
+// Arrêter l'ambiance active avec fondu
+export const stopAmbience = () => {
+    if (!currentAmbience) return;
     
-    source.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    source.start(0);
-    return { source, gain: gainNode };
-  } catch (e) {
-    console.error("Erreur lecture audio", e);
-    return null;
-  }
-};
+    const audioToStop = currentAmbience;
+    currentAmbience = null;
+    currentAmbienceKey = null;
 
-// --- EXPORTS API ---
-
-export const playRainAmbience = (duration = 15) => {
-    play('rain', { loop: true, volume: 0.3 }).then(audio => {
-        if (audio) {
-            setTimeout(() => {
-                const now = audio.gain.context.currentTime;
-                try {
-                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
-                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
-                } catch(e){}
-            }, duration * 1000);
+    // Fade Out manuel
+    const fadeOutInterval = setInterval(() => {
+        if (audioToStop.volume > 0.05) {
+            audioToStop.volume -= 0.05;
+        } else {
+            audioToStop.volume = 0;
+            audioToStop.pause();
+            audioToStop.currentTime = 0;
+            clearInterval(fadeOutInterval);
         }
-    });
+    }, 100);
 };
 
-export const playDarkForest = (duration = 15) => {
-    // Mix vent + forêt
-    play('wind', { loop: true, volume: 0.15 }).then(a => {
-        if(a) setTimeout(() => { try{ a.source.stop() } catch(e){} }, (duration + 1) * 1000);
-    });
-    play('forest', { loop: true, volume: 0.25 }).then(audio => {
-        if (audio) {
-            setTimeout(() => {
-                const now = audio.gain.context.currentTime;
-                try {
-                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
-                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
-                } catch(e){}
-            }, duration * 1000);
-        }
-    });
-};
+// --- API PUBLIQUE (MAPPINGS) ---
 
-export const playThunder = () => play('thunder', { volume: 0.6, pitchVar: 50 });
+export const playRain = () => playAmbienceLoop('rain', 0.5);
+export const playThunder = () => playEffect('thunder', 0.8);
+export const playWind = () => playAmbienceLoop('wind', 0.4);
+export const playForest = () => playAmbienceLoop('forest', 0.3);
+export const playCave = () => playAmbienceLoop('cave', 0.5);
+export const playTavern = () => playAmbienceLoop('tavern', 0.4);
+export const playCampfire = () => playAmbienceLoop('camp', 0.4);
+export const playDarkAmbience = () => playAmbienceLoop('dark_ambience', 0.4);
 
-export const playDungeonAmbience = (duration = 15) => {
-    play('dungeon', { loop: true, volume: 0.4 }).then(audio => {
-        if (audio) {
-            setTimeout(() => {
-                const now = audio.gain.context.currentTime;
-                try {
-                    audio.gain.gain.linearRampToValueAtTime(0, now + 2);
-                    setTimeout(() => { try { audio.source.stop(); } catch(e){} }, 2000);
-                } catch(e){}
-            }, duration * 1000);
-        }
-    });
-};
+export const playSwordSwing = () => playEffect('sword_swing', 0.4);
+export const playSwordHit = () => playEffect('sword_hit', 0.6);
+export const playBowShot = () => playEffect('bow_shoot', 0.6);
+export const playPunch = () => playEffect('punch', 0.6);
+export const playDagger = () => playEffect('dagger', 0.5);
 
-export const playMonsterEnraged = () => play('roar', { volume: 0.5, pitchVar: 150 });
-export const playMonsterHit = () => play('hit_flesh', { volume: 0.5, pitchVar: 100 });
-export const playGhostlyWail = () => play('ghost', { volume: 0.3 });
-export const playElectricArc = () => play('electric', { volume: 0.3 });
-export const playMechanicalTrap = () => play('trap', { volume: 0.5 });
-export const playIceTrap = () => play('ice', { volume: 0.4 });
-export const playDiceSound = () => play('dice', { volume: 0.6, pitchVar: 50 });
+export const playFireball = () => playEffect('fireball', 0.7);
+export const playIce = () => playEffect('ice', 0.6);
+export const playLightning = () => playEffect('lightning', 0.6);
+export const playHeal = () => playEffect('heal', 0.5);
+export const playCurse = () => playEffect('curse', 0.6);
+export const playTeleport = () => playEffect('teleport', 0.6);
 
+export const playRoar = () => playEffect('roar', 0.8);
+export const playGhost = () => playEffect('ghost', 0.5);
+export const playZombie = () => playEffect('zombie', 0.6);
+export const playSteps = () => playEffect('steps_heavy', 0.7);
+
+export const playDiceSound = () => playEffect('dice', 0.8);
+export const playTrap = () => playEffect('trap', 0.7);
+export const playDoor = () => playEffect('door_creak', 0.7);
+export const playChest = () => playEffect('chest_open', 0.6);
+export const playLockpick = () => playEffect('lockpick', 0.6);
+export const playCoin = () => playEffect('coin', 0.5);
+
+// Helper pour jouer un son automatique selon l'arme et le résultat
 export const playCombatSound = (weapon: WeaponType, result: DiceResult) => {
     if (result === DiceResult.FAIL || result === DiceResult.CRITICAL_FAIL) {
-        play('sword_swing', { volume: 0.3, pitchVar: 100 });
+        playEffect('sword_swing', 0.4);
         return;
     }
     
-    if ([WeaponType.WARHAMMER, WeaponType.BATTLEAXE].includes(weapon)) {
-        play('hit_armor', { volume: 0.5, pitchVar: 100 });
-    } else if ([WeaponType.FIRE_SPELL, WeaponType.ICE_SPELL].includes(weapon)) {
-        play('magic_blast', { volume: 0.4 });
-    } else {
-        play('hit_flesh', { volume: 0.5, pitchVar: 100 });
+    switch (weapon) {
+        case WeaponType.BOW: playEffect('bow_shoot', 0.6); break;
+        case WeaponType.FIRE_SPELL: playEffect('fireball', 0.6); break;
+        case WeaponType.ICE_SPELL: playEffect('ice', 0.6); break;
+        case WeaponType.UNARMED: playEffect('punch', 0.6); break;
+        case WeaponType.DAGGER: playEffect('dagger', 0.6); break;
+        default: playEffect('sword_hit', 0.6); break;
     }
 };

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, Sword, Shield, Sparkles, Zap, Scroll, Book, Eye, Search, Wind, Move, Star, AlertCircle, Heart, Brain, MessageSquare, Target, Wand2 } from 'lucide-react';
+import { X, Sword, Shield, Sparkles, Zap, Scroll, Book, Eye, Search, Wind, Move, Star, AlertCircle, Heart, Brain, MessageSquare, Target, Wand2, Key, ExternalLink } from 'lucide-react';
 
 interface QuickHelpProps {
   onClose: () => void;
@@ -162,6 +162,26 @@ const QuickHelp: React.FC<QuickHelpProps> = ({ onClose }) => {
                     <div className="p-4 bg-blue-950/10 border border-blue-800/30 rounded">
                         <h4 className="text-[10px] font-bold text-blue-400 uppercase mb-2">Équilibre / Pirouettes (Acrobaties)</h4>
                         <p className="text-[11px] text-gray-400">Marcher sur une corde, faire une roulade, rester debout sur de la glace. <strong className="text-white">Stat : DEXTÉRITÉ.</strong></p>
+                    </div>
+                </div>
+            </section>
+
+             {/* 5. Clé API & Technique */}
+             <section className="space-y-4 pt-4 border-t border-gold-dark/20">
+                <h3 className="font-header text-lg text-gold-antique flex items-center gap-2">
+                    <Key className="w-5 h-5 text-gray-400" /> Clé API & Fonctionnement
+                </h3>
+                <div className="bg-black/40 p-4 border border-gray-800 rounded">
+                    <p className="text-[11px] text-parchment/80 leading-relaxed mb-2">
+                        Cette application nécessite une <strong>Clé API Google Gemini</strong> pour fonctionner (IA). 
+                        Elle est stockée uniquement dans votre navigateur (LocalStorage).
+                    </p>
+                    <div className="flex items-start gap-2 text-[10px] text-gray-400 bg-black/60 p-2 rounded border border-white/5">
+                        <ExternalLink className="w-3 h-3 mt-0.5" />
+                        <span>
+                            Clé perdue ? Générez-en une nouvelle gratuitement sur <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-blue-400 underline" rel="noreferrer">Google AI Studio</a>.
+                            <br/>Puis allez dans <strong>Configuration</strong> (Roue dentée) pour la mettre à jour.
+                        </span>
                     </div>
                 </div>
             </section>

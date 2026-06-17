@@ -1,5 +1,4 @@
 
-
 export enum NarrationStyle {
   SIMPLE = 'Simple (Rapide)',
   MEDIUM = 'Semi-détaillée (Équilibrée)',
@@ -12,6 +11,48 @@ export enum NarratorMode {
   INTERACTIVE = 'Objet Interactif / Énigme',
   DICE = 'Dés',
   WORLD = 'Monde / Ambiance',
+  BESTIARY = 'Bestiaire / Monstre',
+  NPC = 'Personnage / PNJ',
+}
+
+export enum NpcAction {
+  DIALOGUE = 'Dialogue seulement',
+  QUEST = 'Donne une quête',
+  RIDDLE = 'Propose une énigme',
+}
+
+export enum QuestComplexity {
+  NONE = 'Sans quête',
+  SIMPLE = 'Simple',
+  COMPLEX = 'Complexe',
+}
+
+export enum NpcReward {
+  NONE = 'Aucun objet',
+  ITEM = 'Gain avec un objet',
+}
+
+export enum MechanicalDifficulty {
+  BEGINNER = 'Débutant (Simple & Pédagogique)',
+  INTERMEDIATE = 'Intermédiaire (Standard D&D)',
+  ADVANCED = 'Confirmé (Tactique & Riche)',
+  PRO = 'Expert (Légendaire & Complexe)',
+}
+
+export enum PlayerExperience {
+  INITIATION = 'Initiation (Indulgent / Fun)',
+  BEGINNER = 'Débutant (Standard / Équilibré)',
+  VETERAN = 'Vétéran (Tactique / Exigeant)',
+  HARDCORE = 'Hardcore (Létal / Impitoyable)',
+}
+
+export enum MonsterCR {
+  TRIVIAL = 'FP 0 - 1/4 (Menu fretin : 1-15 PV)',
+  MINOR = 'FP 1/2 - 1 (Standard T1 : 16-45 PV)',
+  LOW = 'FP 2 - 4 (Élite T1 / Boss : 50-95 PV)',
+  MEDIUM = 'FP 5 - 10 (Aguerri T2 : 100-190 PV)',
+  HIGH = 'FP 11 - 16 (Légendaire T3 : 200-350 PV)',
+  BOSS = 'FP 17+ (Divin T4 : 400+ PV)',
 }
 
 export enum LootType {
@@ -34,7 +75,7 @@ export enum InteractiveObjectType {
 }
 
 export enum InteractionAction {
-  TOUCH = 'Toucher (Effet Réactif / Piège)',
+  TOUCH = 'Toucher (Piège / Bénédiction)',
   OPEN = 'Ouvrir / Fouiller (Contenant)',
   RIDDLE = 'Énigme / Puzzle (Bloqué)',
 }
@@ -49,7 +90,7 @@ export enum EnvironmentType {
   DUNGEON = 'Donjon / Crypte',
   CASTLE = 'Château / Fort',
   MANOR = 'Manoir / Demeure',
-  FOREST = 'Foit / Bois',
+  FOREST = 'Forêt / Bois',
   CAVE = 'Grotte / Caverne',
   TAVERN = 'Taverne / Auberge',
   CITY = 'Ville / Ruelle',
@@ -58,6 +99,7 @@ export enum EnvironmentType {
   MOUNTAIN = 'Montagne / Col',
   SWAMP = 'Marais / Marécage',
   TEMPLE = 'Temple / Sanctuaire',
+  VILLAGE = 'Village / Hameau',
 }
 
 export enum WorldAtmosphere {
@@ -67,7 +109,7 @@ export enum WorldAtmosphere {
   BLOODY = 'Sanglant / Massacre récent',
   MAGICAL = 'Magique / Féérique / Mystique',
   DARKNESS = 'Ténèbres Totales / Oppressant',
-  FOGGY = 'Brumeux / Mystérieux',
+  FOGGY = 'Brumeux / MystÉRIeux',
   BURNING = 'En flammes / Cendres',
 }
 
@@ -78,6 +120,8 @@ export enum WeaponType {
   BOW = 'Arc',
   FIRE_SPELL = 'Sortilège de feu',
   ICE_SPELL = 'Sortilège de glace',
+  NATURE_SPELL = 'Sortilège de Nature / Lianes',
+  MAGIC_SPELL = 'Sortilège / Magie (Générique)',
   UNARMED = 'Mains nues',
   WARHAMMER = 'Marteau de guerre',
 }
@@ -117,10 +161,18 @@ export interface CombatState {
   interactiveObj: InteractiveObjectType;
   interactionAction: InteractionAction;
   riddleDifficulty: RiddleDifficulty;
+  monsterCR: MonsterCR;
+  mechanicalDifficulty: MechanicalDifficulty;
+  playerExperience: PlayerExperience;
+  partySize: number;
+  isLeader: boolean;
+  isGroup: boolean;
   target: string;
+  npcAction: NpcAction;
+  questComplexity: QuestComplexity;
+  npcReward: NpcReward;
 }
 
-// --- VAULT TYPES ---
 export interface Currency {
   copper: number;
   silver: number;
@@ -160,8 +212,8 @@ export interface SessionState {
   isActive: boolean;
 }
 
-// --- CHARACTER SHEET TYPES ---
-export interface AbilityStats {
+// Interfaces added to support CharacterSheet.tsx
+export interface CharacterStats {
   str: number;
   dex: number;
   con: number;
@@ -170,7 +222,7 @@ export interface AbilityStats {
   cha: number;
 }
 
-export interface AbilityModifiers {
+export interface CharacterModifiers {
   str: string;
   dex: string;
   con: string;
@@ -198,7 +250,7 @@ export interface Attack {
   damage: string;
 }
 
-export interface FeatureTrait {
+export interface Feature {
   name: string;
   description: string;
 }
@@ -214,8 +266,8 @@ export interface CharacterProfile {
   race: string;
   alignment: string;
   xp: string;
-  stats: AbilityStats;
-  modifiers: AbilityModifiers;
+  stats: CharacterStats;
+  modifiers: CharacterModifiers;
   proficiencyBonus: string;
   savingThrows: SavingThrow[];
   skills: Skill[];
@@ -233,7 +285,7 @@ export interface CharacterProfile {
   ideals: string;
   bonds: string;
   flaws: string;
-  featuresAndTraits: FeatureTrait[];
+  featuresAndTraits: Feature[];
   otherProficiencies: string[];
   age: string;
   height: string;

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">D&amp;D Action Narrator</string>
+    <string name="title_activity_main">D&amp;D Action Narrator</string>
+    <string name="package_name">com.ddactionnarrator.app</string>
+    <string name="custom_url_scheme">com.ddactionnarrator.app</string>
+</resources>

@@ -50,21 +50,16 @@
         min-height: 100vh;
         width: 100vw;
         overflow-x: hidden;
-        overflow-y: auto;
         -webkit-font-smoothing: antialiased;
       }
 
-      /* MASQUAGE DES SCROLLBARS MAIS AUTORISATION DU SCROLL */
-      * {
-        scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
+      /* Scrollbar élégante ou invisible */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
       }
-      
-      *::-webkit-scrollbar {
-        width: 0 !important;
-        height: 0 !important;
-        display: none !important;
-        background: transparent !important;
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
 
       @keyframes fade-in {
@@ -72,6 +67,18 @@
         to { opacity: 1; transform: translateY(0); }
       }
       .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+
+      @keyframes neon-heartbeat {
+        0% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
+        15% { box-shadow: 0 0 15px rgba(220, 20, 60, 0.6); border-color: rgba(220, 20, 60, 0.6); }
+        30% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
+        45% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); border-color: rgba(255, 0, 0, 0.9); }
+        60% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
+        100% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
+      }
+      .animate-neon-heartbeat {
+        animation: neon-heartbeat 1.5s infinite ease-in-out;
+      }
     </style>
   <script type="importmap">
 {
@@ -81,7 +88,8 @@
     "react/": "https://esm.sh/react@^19.2.4/",
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.45.4"
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.45.4",
+    "qrcode": "https://esm.sh/qrcode@^1.5.4"
   }
 }
 </script>
