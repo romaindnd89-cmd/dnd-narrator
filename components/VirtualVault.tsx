@@ -315,13 +315,15 @@ const VirtualVault: React.FC<VirtualVaultProps> = ({ session, onUpdateSession, o
       </div>
 
       {showShare && (
-          <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-6 z-50 animate-fade-in">
-              <h4 className="font-header text-gold-antique mb-4 uppercase tracking-widest text-xs">Lien Joueurs {isCloudConnected ? '(LIVE)' : '(STATIQUE)'}</h4>
-              <div className="bg-white p-2 rounded-lg mb-4">
-                  {qrCodeData ? <img src={qrCodeData} alt="QR Code" className="w-48 h-48" /> : <Loader2 className="w-10 h-10 text-black animate-spin" />}
+          <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center p-6 z-50 animate-fade-in overflow-y-auto no-scrollbar">
+              <div className="my-auto flex flex-col items-center">
+                  <h4 className="font-header text-gold-antique mb-4 uppercase tracking-widest text-xs">Lien Joueurs {isCloudConnected ? '(LIVE)' : '(STATIQUE)'}</h4>
+                  <div className="bg-white p-2 rounded-lg mb-4">
+                      {qrCodeData ? <img src={qrCodeData} alt="QR Code" className="w-48 h-48" /> : <Loader2 className="w-10 h-10 text-black animate-spin" />}
+                  </div>
+                  <button onClick={handleCopy} className={`py-3 px-8 border rounded uppercase text-[10px] tracking-widest mb-2 w-full ${isCloudConnected ? 'bg-emerald-900/20 text-emerald-400 border-emerald-500/50' : 'bg-gold-dark/20 text-gold-antique border-gold-dark/50'}`}>{copied ? 'Lien Copié !' : 'Copier le Lien'}</button>
+                  <button onClick={() => setShowShare(false)} className="mt-2 text-gray-500 text-[10px] uppercase font-bold">Fermer</button>
               </div>
-              <button onClick={handleCopy} className={`py-3 px-8 border rounded uppercase text-[10px] tracking-widest mb-2 ${isCloudConnected ? 'bg-emerald-900/20 text-emerald-400 border-emerald-500/50' : 'bg-gold-dark/20 text-gold-antique border-gold-dark/50'}`}>{copied ? 'Lien Copié !' : 'Copier le Lien'}</button>
-              <button onClick={() => setShowShare(false)} className="mt-2 text-gray-500 text-[10px] uppercase font-bold">Fermer</button>
           </div>
       )}
 

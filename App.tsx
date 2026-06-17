@@ -243,7 +243,7 @@ const App: React.FC = () => {
           )}
         </section>
 
-        <aside className="hidden lg:block lg:w-[400px] shrink-0">
+        <aside className="hidden lg:block lg:w-[400px] shrink-0 self-stretch">
           <VirtualVault session={session} onUpdateSession={setSession} onReset={() => setSession({ ...session, players: [], isActive: false })} />
         </aside>
       </main>
