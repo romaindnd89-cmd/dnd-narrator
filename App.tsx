@@ -169,7 +169,12 @@ const App: React.FC = () => {
       </div>
 
       {/* HEADER */}
-      <header className="relative z-30 w-full max-w-7xl px-4 md:px-8 pt-6 md:pt-10 mb-6 md:mb-10 flex items-center justify-between animate-fade-in shrink-0">
+      <header 
+        className="relative z-30 w-full max-w-7xl px-4 md:px-8 mb-6 md:mb-10 flex items-center justify-between animate-fade-in shrink-0"
+        style={{ 
+          paddingTop: 'calc(env(safe-area-inset-top) + 1.5rem)',
+        }}
+      >
         <div className="flex-1 lg:flex-none">
           <h1 className="font-header text-xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-b from-gold-antique to-gold-dark uppercase tracking-[0.2em] md:tracking-widest leading-none drop-shadow-md">
             D&D Narrator
@@ -249,7 +254,7 @@ const App: React.FC = () => {
       
       {showVault && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col animate-fade-in lg:hidden">
-            <div className="p-4 flex justify-end shrink-0 bg-darker-metal border-b border-gold-dark/20">
+            <div className="p-4 flex justify-end shrink-0 bg-darker-metal border-b border-gold-dark/20" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
                 <button onClick={() => setShowVault(false)} className="p-4 bg-blood-dark rounded-full border border-gold-dark/50 text-gold-antique shadow-glow-red active:scale-90 transition-all">
                   <X className="w-6 h-6" />
                 </button>
@@ -262,7 +267,7 @@ const App: React.FC = () => {
 
       {showSoundBox && (
         <div className="fixed inset-0 z-[10000] bg-black flex flex-col animate-fade-in lg:hidden">
-            <div className="p-4 flex justify-end shrink-0 bg-darker-metal border-b border-gold-dark/20">
+            <div className="p-4 flex justify-end shrink-0 bg-darker-metal border-b border-gold-dark/20" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 1rem)' }}>
                 <button onClick={() => setShowSoundBox(false)} className="p-4 bg-gold-dark rounded-full border border-gold-dark/50 text-black shadow-glow-gold active:scale-90 transition-all">
                   <X className="w-6 h-6" />
                 </button>
