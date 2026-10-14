@@ -1,105 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#050505" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>D&D Action Narrator | Par Romain.DnD89</title>
+    <meta name="description" content="Générateur de narrations Dark Fantasy pour vos sessions de JdR : combats, monstres, PNJ, énigmes et butin." />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
-    <meta name="description" content="Générateur de narrations de combat Dark Fantasy pour vos sessions de JdR.">
-    <link rel="manifest" href="/manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'blood-red': '#8a0303',
-              'blood-dark': '#4a0101',
-              'gold-antique': '#c5a059',
-              'gold-dark': '#8a6e36',
-              'parchment': '#f0e6d2',
-              'parchment-dark': '#dcd0b9',
-              'dark-metal': '#1a1b1e',
-              'darker-metal': '#0f1012',
-            },
-            fontFamily: {
-              fantasy: ['"MedievalSharp"', 'cursive'],
-              header: ['"Cinzel"', 'serif'],
-              body: ['"Merriweather"', 'serif'],
-            },
-            boxShadow: {
-              'glow-gold': '0 0 15px rgba(197, 160, 89, 0.3)',
-              'glow-red': '0 0 20px rgba(138, 3, 3, 0.4)',
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #000000;
-        color: #dcd0b9;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        width: 100vw;
-        overflow-x: hidden;
-        -webkit-font-smoothing: antialiased;
-      }
-
-      /* Scrollbar élégante ou invisible */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-
-      @keyframes fade-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-
-      @keyframes neon-heartbeat {
-        0% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
-        15% { box-shadow: 0 0 15px rgba(220, 20, 60, 0.6); border-color: rgba(220, 20, 60, 0.6); }
-        30% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
-        45% { box-shadow: 0 0 25px rgba(255, 0, 0, 0.8); border-color: rgba(255, 0, 0, 0.9); }
-        60% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
-        100% { box-shadow: 0 0 5px rgba(138, 3, 3, 0.4); border-color: rgba(138, 3, 3, 0.4); }
-      }
-      .animate-neon-heartbeat {
-        animation: neon-heartbeat 1.5s infinite ease-in-out;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.45.4",
-    "qrcode": "https://esm.sh/qrcode@^1.5.4"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

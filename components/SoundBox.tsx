@@ -51,13 +51,10 @@ const SoundBox: React.FC<SoundBoxProps> = ({ onClose }) => {
         {activeAmbience && (
             <div className="flex items-center gap-2 px-3 py-1 bg-gold-dark/10 border border-gold-dark/30 rounded-full animate-pulse">
                 <Volume2 className="w-3 h-3 text-gold-antique" />
-                <span className="text-[9px] uppercase font-bold text-gold-antique">{activeAmbience}</span>
+                <span className="text-[11px] uppercase font-bold text-gold-antique">{activeAmbience}</span>
             </div>
         )}
 
-        <button onClick={onClose} className="p-1 text-gray-500 hover:text-white lg:hidden">
-          <X className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Tabs */}
@@ -66,10 +63,12 @@ const SoundBox: React.FC<SoundBoxProps> = ({ onClose }) => {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id as Category)}
-            className={`flex-1 min-w-[60px] py-3 flex flex-col items-center gap-1 transition-all ${activeCategory === cat.id ? 'bg-gold-dark/10 text-gold-antique border-b-2 border-gold-antique' : 'text-gray-600 hover:text-gray-400 border-b-2 border-transparent'}`}
+            type="button"
+            aria-pressed={activeCategory === cat.id}
+            className={`flex-1 min-w-[64px] min-h-[52px] py-2 flex flex-col items-center gap-1 transition-all ${activeCategory === cat.id ? 'bg-gold-dark/10 text-gold-antique border-b-2 border-gold-antique' : 'text-gray-400 hover:text-parchment border-b-2 border-transparent'}`}
           >
             <cat.icon className="w-4 h-4" />
-            <span className="text-[7px] uppercase font-bold tracking-widest">{cat.label}</span>
+            <span className="text-[10px] uppercase font-bold tracking-wide">{cat.label}</span>
           </button>
         ))}
       </div>
@@ -159,7 +158,8 @@ const SoundBox: React.FC<SoundBoxProps> = ({ onClose }) => {
       {activeAmbience && (
          <button 
             onClick={() => handleAmbience(activeAmbience, () => {})}
-            className="w-full py-3 bg-red-900/20 hover:bg-red-900/40 text-red-400 border-t border-red-900/30 text-[9px] uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
+            type="button"
+            className="w-full min-h-[48px] py-3 bg-red-900/20 hover:bg-red-900/40 text-red-400 border-t border-red-900/30 text-xs uppercase font-bold tracking-widest transition-colors flex items-center justify-center gap-2"
          >
             <Volume2 className="w-3 h-3" /> Arrêter l'ambiance
          </button>
@@ -168,9 +168,11 @@ const SoundBox: React.FC<SoundBoxProps> = ({ onClose }) => {
   );
 };
 
-const SoundButton = ({ icon: Icon, label, onClick, color = "text-gold-antique", isActive = false, isEffect = false }: { icon: any, label: string, onClick: () => void, color?: string, isActive?: boolean, isEffect?: boolean }) => (
+const SoundButton = ({ icon: Icon, label, onClick, color = "text-gold-antique", isActive = false, isEffect = false }: { icon: React.ComponentType<{ className?: string }>, label: string, onClick: () => void, color?: string, isActive?: boolean, isEffect?: boolean }) => (
   <button
+    type="button"
     onClick={onClick}
+    aria-pressed={isActive}
     className={`
         flex flex-col items-center justify-center p-3 rounded-lg border transition-all active:scale-95 group relative overflow-hidden h-[80px]
         ${isActive 
@@ -180,7 +182,7 @@ const SoundButton = ({ icon: Icon, label, onClick, color = "text-gold-antique", 
     `}
   >
     <Icon className={`w-5 h-5 mb-2 transition-transform group-hover:scale-110 ${isActive ? 'text-white animate-pulse' : color}`} />
-    <span className={`text-[8px] font-header uppercase tracking-wider text-center leading-none ${isActive ? 'text-white font-bold' : 'text-parchment/60 group-hover:text-parchment'}`}>
+    <span className={`text-[11px] font-header uppercase tracking-wide text-center leading-tight ${isActive ? 'text-white font-bold' : 'text-parchment/75 group-hover:text-parchment'}`}>
         {label}
     </span>
     {isActive && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gold-antique animate-pulse"></div>}
