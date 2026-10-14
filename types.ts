@@ -109,7 +109,7 @@ export enum WorldAtmosphere {
   BLOODY = 'Sanglant / Massacre récent',
   MAGICAL = 'Magique / Féérique / Mystique',
   DARKNESS = 'Ténèbres Totales / Oppressant',
-  FOGGY = 'Brumeux / MystÉRIeux',
+  FOGGY = 'Brumeux / Mystérieux',
   BURNING = 'En flammes / Cendres',
 }
 

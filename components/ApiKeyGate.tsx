@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Key, ExternalLink, ShieldAlert, Sparkles, Eye } from 'lucide-react';
+import { Key, ExternalLink, ShieldAlert, Eye } from 'lucide-react';
+import { DEMO_KEY, isPlausibleApiKey } from '../services/geminiService';
 
 interface ApiKeyGateProps {
   onKeySubmit: (key: string) => void;
@@ -11,23 +12,24 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputKey.length < 30) {
-      setError("Cette clé runique semble invalide (trop courte).");
+    if (!isPlausibleApiKey(inputKey)) {
+      setError('Cette clé runique semble invalide (trop courte ou avec des espaces).');
       return;
     }
-    onKeySubmit(inputKey);
+    onKeySubmit(inputKey.trim());
   };
 
   const handleDemoMode = () => {
-    onKeySubmit("DEMO");
+    onKeySubmit(DEMO_KEY);
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-black">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-black"
+      style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blood-dark/20 via-black to-black animate-pulse"></div>
       
-      <div className="relative z-10 max-w-lg w-full bg-darker-metal border-2 border-gold-dark/40 p-8 rounded-lg shadow-[0_0_50px_rgba(138,3,3,0.3)] text-center animate-fade-in">
+      <div className="relative z-10 max-w-lg w-full bg-darker-metal border-2 border-gold-dark/40 p-6 md:p-8 rounded-2xl shadow-[0_0_50px_rgba(138,3,3,0.3)] text-center animate-fade-in">
         
         <div className="mb-6 flex justify-center">
             <div className="p-4 rounded-full bg-blood-dark/30 border border-gold-dark/30 shadow-glow-gold">
@@ -35,7 +37,7 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
             </div>
         </div>
 
-        <h2 className="font-header text-3xl text-gold-antique mb-4 uppercase tracking-widest">
+        <h2 className="font-header text-2xl md:text-3xl text-gold-antique mb-4 uppercase tracking-widest">
           Halte, Voyageur
         </h2>
         
@@ -61,6 +63,8 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
           <div className="relative">
             <input
               type="password"
+              autoComplete="off"
+              aria-label="Clé API Gemini"
               value={inputKey}
               onChange={(e) => {
                 setInputKey(e.target.value);
@@ -72,7 +76,7 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
           </div>
           
           {error && (
-            <div className="flex items-center justify-center gap-2 text-red-500 text-sm animate-bounce">
+            <div className="flex items-center justify-center gap-2 text-red-400 text-sm">
               <ShieldAlert className="w-4 h-4" />
               {error}
             </div>
@@ -80,7 +84,7 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
 
           <button
             type="submit"
-            className="w-full py-3 bg-gradient-to-r from-blood-dark to-red-900 hover:from-blood-red hover:to-red-800 text-gold-antique font-header uppercase tracking-wider font-bold rounded shadow-lg border border-gold-dark/30 transition-all transform hover:scale-[1.02]"
+            className="w-full min-h-[52px] py-3 bg-gradient-to-r from-blood-dark to-red-900 hover:from-blood-red hover:to-red-800 text-gold-antique font-header uppercase tracking-wider font-bold rounded shadow-lg border border-gold-dark/30 transition-all transform hover:scale-[1.02]"
           >
             Entrer dans le Donjon
           </button>
@@ -89,14 +93,14 @@ const ApiKeyGate: React.FC<ApiKeyGateProps> = ({ onKeySubmit }) => {
         <div className="mt-6 pt-4 border-t border-gold-dark/20">
             <button 
                 onClick={handleDemoMode}
-                className="text-gray-500 hover:text-parchment text-sm flex items-center justify-center gap-2 mx-auto transition-colors"
+                className="min-h-[44px] px-4 text-gray-400 hover:text-parchment text-sm flex items-center justify-center gap-2 mx-auto transition-colors"
             >
                 <Eye className="w-4 h-4" />
-                Juste visiter l'interface (Mode Démo sans IA)
+                Visiter l'interface (mode démo, sans clé)
             </button>
         </div>
         
-        <p className="mt-4 text-xs text-gray-600">
+        <p className="mt-4 text-xs text-gray-500">
           Votre clé est stockée uniquement dans votre navigateur et envoyée directement aux serveurs de Google pour la génération. Aucun intermédiaire.
         </p>
       </div>
